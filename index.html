@@ -15,10 +15,10 @@ h1{font-size:clamp(25px,6vw,38px);margin:0 0 4px;line-height:1.05}h1 span{color:
 label{display:block;font-size:12px;color:#c4d8e8;margin:12px 0 5px}input,select{width:100%;border:1px solid #ffffff28;border-radius:11px;padding:12px;background:#10283e;color:white;font:inherit;outline:none}
 button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 15px;font-weight:800;color:#061426;background:var(--cyan);touch-action:manipulation}button.secondary{background:#1a344a;color:#eaf7ff;border:1px solid #ffffff20}button.orangeBtn{background:var(--orange)}button:disabled{opacity:.5} .actions{display:flex;gap:8px;margin-top:12px}.actions button{flex:1}.note{font-size:11px;color:#a9c0d4;line-height:1.5;margin-top:13px}.rule{height:1px;background:#ffffff18;margin:16px 0}
 #controls{position:fixed;inset:0;pointer-events:none;display:none}.joystick{position:absolute;left:20px;bottom:max(22px,env(safe-area-inset-bottom));width:124px;height:124px;border-radius:50%;background:#dff8ff18;border:2px solid #dff8ff40;pointer-events:auto;touch-action:none}.stick{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#70edffad;border:2px solid #fff9;box-shadow:0 4px 16px #0005}
-.btnCluster{position:absolute;right:18px;bottom:max(20px,env(safe-area-inset-bottom));display:grid;grid-template-columns:70px 70px;gap:10px;pointer-events:auto}.gameBtn{width:70px;height:70px;border-radius:50%;background:#dff8ff22;color:white;border:2px solid #ffffff55;font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none}.gameBtn.boost{background:#ff9a436e;border-color:#ffbf77}.gameBtn.jump{background:#4de7ff55}.gameBtn.active{filter:brightness(1.5);transform:scale(.96)}
+.btnCluster{position:absolute;right:18px;bottom:max(20px,env(safe-area-inset-bottom));display:grid;grid-template-columns:64px 64px;gap:8px;pointer-events:auto}.gameBtn{width:64px;height:64px;border-radius:50%;background:#dff8ff22;color:white;border:2px solid #ffffff55;font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none}.gameBtn.boost{background:#ff9a436e;border-color:#ffbf77}.gameBtn.jump{background:#4de7ff55}.gameBtn.active{filter:brightness(1.5);transform:scale(.96)}
 #toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:#061426dd;padding:10px 16px;border-radius:12px;font-weight:900;opacity:0;transition:opacity .2s;pointer-events:none;z-index:5}
 #goalBanner{position:fixed;top:37%;width:100%;text-align:center;font-size:clamp(34px,10vw,72px);font-weight:1000;font-style:italic;letter-spacing:.06em;color:#fff;text-shadow:0 5px 30px #000;opacity:0;pointer-events:none}
-@media(min-width:800px){.joystick{width:140px;height:140px;left:26px;bottom:24px}.stick{left:44px;top:44px}.btnCluster{right:26px;bottom:25px}.gameBtn{width:76px;height:76px}}
+@media(min-width:800px){.joystick{width:140px;height:140px;left:26px;bottom:24px}.stick{left:44px;top:44px}.btnCluster{right:26px;bottom:25px;grid-template-columns:76px 76px}.gameBtn{width:76px;height:76px}}
 </style>
 </head>
 <body>
@@ -48,7 +48,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 15px
   <div class="actions"><button id="playSolo">Practice</button><button class="orangeBtn" id="host">Create room</button></div>
   <div class="actions"><button class="secondary" id="join">Join room</button><button class="secondary" id="copyRoom">Copy invite</button></div>
   <div class="rule"></div>
-  <div class="small"><b>Controls</b> — Mobile: left stick to steer/drive; boost, jump, brake on right. Desktop: WASD/arrows, Space jump, Shift boost, S/reverse, R reset.</div>
+  <div class="small"><b>Controls</b> — Mobile: left stick to steer/drive; boost, jump, brake on right. Desktop: WASD/arrows, Space jump, Shift boost, S/reverse, R reset. Drag the open screen area to rotate the camera; tap BALL CAM to follow the ball.</div>
   <div class="note">Multiplayer uses Firebase Realtime Database for room discovery/signaling and WebRTC data channels for live player state. Enable <b>Anonymous</b> sign-in in Firebase Authentication and set Realtime Database rules to require <code>auth != null</code> for <code>/pocketArenaRooms</code>. The included config is public client config, not a server secret. STUN-only peer connections may fail on restrictive networks. Original prototype; not affiliated with Rocket League.</div>
  </div>
 </div>
@@ -160,6 +160,7 @@ window.addEventListener('keyup',e=>keys[e.code]=false);
 function bindHold(id,down,up){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture?.(e.pointerId);down();el.classList.add('active')});for(const ev of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(ev,e=>{up();el.classList.remove('active')})}
 bindHold('boost',()=>touchBoost=true,()=>touchBoost=false);bindHold('jump',()=>touchJump=true,()=>touchJump=false);bindHold('brake',()=>touchBrake=true,()=>touchBrake=false);
 $('reset').addEventListener('pointerdown',e=>{e.preventDefault();resetCar()});
+$('ballCam').addEventListener('pointerdown',e=>{e.preventDefault();ballCam=!ballCam;replayCamera=false;$('ballCam').classList.toggle('active',ballCam);toast(ballCam?'Ball cam ON':'Car camera ON')});
 const joyEl=$('joy'),stick=$('stick');let joyPid=null;
 joyEl.addEventListener('pointerdown',e=>{e.preventDefault();joyPid=e.pointerId;joyEl.setPointerCapture(e.pointerId);moveJoy(e)});
 joyEl.addEventListener('pointermove',e=>{if(e.pointerId===joyPid)moveJoy(e)});
@@ -173,7 +174,7 @@ function input(){let steer=joy.x,drive=-joy.y;
 function resetCar(){me.root.position.set((Math.random()-.5)*10,0,16);me.vel.set(0,0,0);me.yaw=0;me.jumpV=0}
 function clampArena(o){o.root.position.x=THREE.MathUtils.clamp(o.root.position.x,-19.2,19.2);o.root.position.z=THREE.MathUtils.clamp(o.root.position.z,-29.3,29.3)}
 function syncLocalCar(dt,inp){
- const c=me; c.yaw+=inp.steer*dt*(2.35+Math.min(c.vel.length()*.12,1.4))*(c.vel.z*Math.cos(c.yaw)-c.vel.x*Math.sin(c.yaw)>=0?1:-1);
+ const c=me; c.yaw-=inp.steer*dt*(2.35+Math.min(c.vel.length()*.12,1.4))*(c.vel.z*Math.cos(c.yaw)-c.vel.x*Math.sin(c.yaw)>=0?1:-1);
  c.root.rotation.y=c.yaw;c.drive=inp.drive;
  const forward=new THREE.Vector3(-Math.sin(c.yaw),0,-Math.cos(c.yaw));
  const boost=inp.boost&&c.boost>0&&inp.drive>=-.1;
@@ -203,8 +204,43 @@ function stepBall(dt){
  ballState.v.multiplyScalar(Math.pow(.998,dt*60));if(ballState.v.length()>29)ballState.v.setLength(29);
 }
 let blueScore=0,orangeScore=0,timeLeft=180,lastTick=performance.now(),lastSend=0,goalLock=false;
-function score(team){if(goalLock)return;goalLock=true;if(team==='blue')blueScore++;else orangeScore++;$('blueScore').textContent=blueScore;$('orangeScore').textContent=orangeScore;$('goalBanner').textContent='GOAL!';$('goalBanner').style.opacity=1;setTimeout(()=>$('goalBanner').style.opacity=0,1400);setTimeout(()=>{ball.position.set(0,1.25,0);ballState.v.set(0,0,0);resetCar();for(const c of Object.values(remoteCars)){c.root.position.set((Math.random()-.5)*12,0,-15);c.vel.set(0,0,0)}goalLock=false},1700)}
-function updateCamera(dt){const forward=new THREE.Vector3(-Math.sin(me.yaw),0,-Math.cos(me.yaw));const target=me.root.position.clone().addScaledVector(forward,-8).add(new THREE.Vector3(0,5,0));camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(me.root.position.clone().addScaledVector(forward,4).add(new THREE.Vector3(0,1.1,0)))}
+function score(team){if(goalLock)return;goalLock=true;if(team==='blue')blueScore++;else orangeScore++;$('blueScore').textContent=blueScore;$('orangeScore').textContent=orangeScore;$('goalBanner').textContent='GOAL!';$('goalBanner').style.opacity=1;startGoalReplay();setTimeout(()=>$('goalBanner').style.opacity=0,1400);setTimeout(()=>{ball.position.set(0,1.25,0);ballState.v.set(0,0,0);resetCar();for(const c of Object.values(remoteCars)){c.root.position.set((Math.random()-.5)*12,0,-15);c.vel.set(0,0,0)}goalLock=false},1700)}
+let ballCam=false, cameraOrbit=0, cameraPitch=.32, cameraDrag=null, goalReplayUntil=0, replayCamera=false;
+const replayFrames=[];
+function updateCamera(dt,now=performance.now()){
+ const alpha=1-Math.pow(.001,dt);
+ if(replayCamera && now<goalReplayUntil){
+  // Short cinematic goal replay: orbit the ball while the goal banner is on screen.
+  const a=now*.00065, focus=ball.position.clone().add(new THREE.Vector3(0,.2,0));
+  const pos=focus.clone().add(new THREE.Vector3(Math.sin(a)*10,4.4,Math.cos(a)*10));
+  camera.position.lerp(pos,alpha);camera.lookAt(focus);return;
+ }
+ if(replayCamera && now>=goalReplayUntil){replayCamera=false;ballCam=true}
+ if(ballCam){
+  const focus=ball.position.clone();
+  const pos=focus.clone().add(new THREE.Vector3(Math.sin(cameraOrbit)*11,6+cameraPitch*5,Math.cos(cameraOrbit)*11));
+  camera.position.lerp(pos,alpha);camera.lookAt(focus);return;
+ }
+ const yaw=me.yaw+cameraOrbit;
+ const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+ const target=me.root.position.clone().addScaledVector(forward,-8).add(new THREE.Vector3(0,4.5+cameraPitch*4,0));
+ camera.position.lerp(target,alpha);
+ camera.lookAt(me.root.position.clone().addScaledVector(forward,4).add(new THREE.Vector3(0,1.1,0)));
+}
+function startGoalReplay(){replayCamera=true;ballCam=true;goalReplayUntil=performance.now()+2100;toast('GOAL REPLAY · BALL CAM')}
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(!gameStarted || e.clientX<innerWidth*.42)return;
+ cameraDrag={x:e.clientX,y:e.clientY,id:e.pointerId};
+ renderer.domElement.setPointerCapture?.(e.pointerId);
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+ if(!cameraDrag||cameraDrag.id!==e.pointerId)return;
+ const dx=e.clientX-cameraDrag.x,dy=e.clientY-cameraDrag.y;
+ cameraDrag.x=e.clientX;cameraDrag.y=e.clientY;
+ cameraOrbit-=dx*.006;cameraPitch=THREE.MathUtils.clamp(cameraPitch-dy*.004,-.45,.9);
+});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(ev,()=>cameraDrag=null);
+
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;setTimeout(()=>$('toast').style.opacity=0,2200)}
 function setStatus(s){$('status').textContent=s}
 function showGame(){gameStarted=true;$('menu').style.display='none';$('controls').style.display='block';matchEnd=performance.now()+180000;lastTick=performance.now();setStatus(roomCode?`Room ${roomCode}`:'Practice mode')}
@@ -313,7 +349,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min(.035,(now-lastT
  if(now-lastSend>55){sendState();syncBall();lastSend=now}
  if(now>matchEnd){matchEnd=now+180000;toast('New round!')}
  $('clock').textContent=Math.floor(Math.max(0,matchEnd-now)/60000)+':'+String(Math.floor(Math.max(0,matchEnd-now)/1000)%60).padStart(2,'0');
- $('boostLabel').textContent='BOOST '+Math.round(me.boost)+'%';$('boostBar').style.width=me.boost+'%';updateCamera(dt);
+ $('boostLabel').textContent='BOOST '+Math.round(me.boost)+'%';$('boostBar').style.width=me.boost+'%';updateCamera(dt,now);
  }else{camera.position.lerp(new THREE.Vector3(28,24,35),.012);camera.lookAt(0,0,0);ball.rotation.y+=dt*.4}
  for(const c of Object.values(remoteCars)){c.root.position.lerp(c.targetPos,1-Math.pow(.001,dt));let da=((c.targetYaw-c.root.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;c.root.rotation.y+=da*(1-Math.pow(.001,dt));for(const w of c.wheels)w.rotation.x+=dt*5}
  ball.rotation.x+=dt*.35;renderer.render(scene,camera)}
