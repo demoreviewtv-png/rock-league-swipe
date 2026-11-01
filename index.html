@@ -55,6 +55,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 15px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
@@ -88,20 +89,64 @@ for(let x of [-21,21]) box(.25,2,64,cyan,x,.4,0);
 for(let z of [-32,32]){box(42,2,.3,cyan,0,.4,z);box(10,3,.8,dark,0,1,z)}
 for(let z of [-16,0,16]) box(42,.035,.1,white,0,-.12,z);
 const circle=new THREE.Mesh(new THREE.TorusGeometry(5,.06,8,64),white);circle.rotation.x=Math.PI/2;circle.position.y=-.12;scene.add(circle);
+// Stadium stands, roof trusses, floodlights and subtle atmospheric points.
+const standMat=mat(0x102a40,.8), railMat=mat(0x284b63,.5,.2);
+for(const side of [-1,1]){
+ for(let row=0;row<5;row++){
+  box(4.6,.42,64,standMat,side*24.1,row*.72-.15,0);
+ }
+ box(.18,.18,64,railMat,side*21.7,3.45,0);
+ for(const z of [-25,-12,0,12,25]){
+  const tower=box(.28,8,.28,railMat,side*21.9,3.4,z);
+  const lamp=new THREE.PointLight(0xb9efff,1.4,24);lamp.position.set(side*20.8,7.1,z);scene.add(lamp);
+  const fixture=box(1.2,.22,.5,white,side*20.8,7.2,z);
+ }
+}
+for(const z of [-30,30]) for(const x of [-15,-5,5,15]){
+ const lamp=new THREE.PointLight(z<0?0x44dfff:0xffa34b,1.1,18);lamp.position.set(x,6,z*.9);scene.add(lamp);
+}
+const starsGeo=new THREE.BufferGeometry(), starPts=[];
+for(let i=0;i<180;i++)starPts.push((Math.random()-.5)*120,Math.random()*38+8,(Math.random()-.5)*120);
+starsGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPts,3));
+scene.add(new THREE.Points(starsGeo,new THREE.PointsMaterial({color:0x8bbbd5,size:.11,transparent:true,opacity:.7})));
+
 for(let x of [-15,-5,5,15]) for(let z of [-24,-12,12,24]){const pad=new THREE.Mesh(new THREE.CylinderGeometry(.65,.65,.08,24),mat(0xffb342,.35,.2));pad.position.set(x,-.08,z);scene.add(pad);const glow=new THREE.PointLight(0xff9a32,.5,2);glow.position.set(x,.3,z);scene.add(glow)}
 // Goals are openings in end walls, marked by glowing posts.
 for(const z of [-31.5,31.5]) for(const x of [-5,5]){cylinder(.22,.22,5, z<0?cyan:orange,x,2.2,z,0,0); }
 function makeCar(color, accent, label){
- const root=new THREE.Group(); const body=box(1.8,.48,2.8,mat(color,.3,.35),0,.58,0,root);
- box(1.12,.55,1.35,glass,0,1.03,-.12,root); box(1.7,.12,.48,mat(accent,.3,.3),0,.82,-1.1,root);
- const wheels=[];
- for(const x of [-.98,.98]) for(const z of [-.88,.9]){
-  const wh=cylinder(.38,.38,.25,rubber,x,.35,z,Math.PI/2,0,root); wh.rotation.z=Math.PI/2; wheels.push(wh);
-  const hub=cylinder(.16,.16,.27,mat(accent,.4,.25),x,.35,z,Math.PI/2,0,root);hub.rotation.z=Math.PI/2;
+ const root=new THREE.Group(), paint=mat(color,.24,.48), trim=mat(0x07121d,.38,.18), metal=mat(0x9fb9ca,.28,.7);
+ // Low, wide sports-car silhouette
+ box(1.95,.42,2.95,paint,0,.58,0,root);
+ box(1.72,.20,1.10,paint,0,.78,-.45,root);
+ box(1.25,.57,1.40,glass,0,1.00,-.18,root);
+ box(1.13,.06,1.18,mat(0x24475e,.22,.4),0,1.30,-.18,root);
+ // Hood stripe and front bumper
+ box(.18,.025,1.12,mat(accent,.25,.3),0,.805,-1.02,root);
+ box(1.78,.16,.25,trim,0,.39,-1.48,root);
+ box(1.5,.09,.18,paint,0,.48,-1.55,root);
+ // Rear diffuser and spoiler
+ box(1.72,.17,.28,trim,0,.38,1.48,root);
+ box(.12,.30,.12,trim,-.57,.83,1.12,root);box(.12,.30,.12,trim,.57,.83,1.12,root);
+ box(1.55,.12,.38,paint,0,1.02,1.18,root);
+ box(1.35,.05,.28,mat(accent,.24,.3),0,1.09,1.18,root);
+ // Headlights and rear lamps
+ for(const x of [-.65,.65]){
+  box(.38,.10,.07,mat(0xdffaff,.2,.1),x,.63,-1.505,root);
+  box(.38,.10,.07,mat(0xff3434,.25),x,.62,1.505,root);
+  const lamp=new THREE.PointLight(0x8cefff,.55,4);lamp.position.set(x,.7,-1.6);root.add(lamp);
  }
- const nose=box(.48,.12,.15,mat(0xffffff,.2),0,.65,-1.43,root);
- const flame=new THREE.Mesh(new THREE.ConeGeometry(.25,.9,12),mat(accent,.3));flame.rotation.x=-Math.PI/2;flame.position.set(0,.62,1.8);flame.visible=false;root.add(flame);
- scene.add(root);return {root,wheels,flame,color,label,vel:new THREE.Vector3(),yaw:0,boost:100,jumpV:0,groundY:0,steer:0,drive:0};
+ // Wheel assemblies
+ const wheels=[];
+ for(const x of [-1.0,1.0]) for(const z of [-.92,.94]){
+  const tire=cylinder(.39,.39,.28,rubber,x,.38,z,Math.PI/2,0,root);tire.rotation.z=Math.PI/2;wheels.push(tire);
+  const hub=cylinder(.23,.23,.30,metal,x,.38,z,Math.PI/2,0,root);hub.rotation.z=Math.PI/2;
+  const center=cylinder(.105,.105,.315,mat(accent,.25,.35),x,.38,z,Math.PI/2,0,root);center.rotation.z=Math.PI/2;
+ }
+ // Visible exhaust flame when boosting
+ const flame=new THREE.Mesh(new THREE.ConeGeometry(.24,.95,12),mat(accent,.25,.15));
+ flame.rotation.x=Math.PI/2;flame.position.set(0,.55,1.86);flame.visible=false;root.add(flame);
+ scene.add(root);
+ return {root,wheels,flame,color,label,vel:new THREE.Vector3(),yaw:0,boost:100,jumpV:0,groundY:0,steer:0,drive:0,targetPos:new THREE.Vector3(),targetYaw:0};
 }
 const me=makeCar(0x11aee0,0x6cf2ff,'You');me.root.position.set(0,0,18);
 const ball=new THREE.Mesh(new THREE.SphereGeometry(1.15,32,24),ballMat);ball.castShadow=true;ball.receiveShadow=true;scene.add(ball);ball.position.set(0,1.25,0);
@@ -148,7 +193,7 @@ function stepBall(dt){
  if(Math.abs(ball.position.x)>20.2){ball.position.x=Math.sign(ball.position.x)*20.2;ballState.v.x*=-.72}
  if(ball.position.z>31.4||ball.position.z< -31.4){
   const goal=Math.abs(ball.position.x)<5.4&&ball.position.y<4.4;
-  if(goal){score(ball.position.z>0?'blue':'orange');return}
+  if(goal){score(ball.position.z<0?'blue':'orange');return}
   ball.position.z=Math.sign(ball.position.z)*31.4;ballState.v.z*=-.78;
  }
  // Arena and car collision
@@ -168,50 +213,98 @@ $('host').onclick=async()=>{roomCode=($('room').value.trim().toUpperCase()||Math
 $('join').onclick=async()=>{roomCode=$('room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);if(!roomCode)return toast('Enter a room code first');isHost=false;await connectRoom(false)};
 $('copyRoom').onclick=async()=>{if(!roomCode)roomCode=$('room').value.trim().toUpperCase();if(!roomCode)return toast('Create or enter a room code first');const url=new URL(location.href);url.hash='room='+roomCode;try{await navigator.clipboard.writeText(url.href);toast('Invite link copied!')}catch{toast('Room code: '+roomCode)}};
 if(location.hash.startsWith('#room=')){$('room').value=decodeURIComponent(location.hash.slice(6)).toUpperCase()}
-function peerConnection(id,initiator){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}]});let channel=null;
- function attach(ch){channel=ch;peers[id].channel=ch;ch.onopen=()=>{setStatus(`Room ${roomCode} · connected`);toast('Friend connected!')};ch.onmessage=e=>{try{const data=JSON.parse(e.data);if(data.type==='state')applyRemote(id,data);if(data.type==='ball'&&!isHost){ball.position.set(data.p.x,data.p.y,data.p.z);ballState.v.set(data.v.x,data.v.y,data.v.z)}}catch{}}}
- if(initiator)attach(pc.createDataChannel('pocket-arena',{ordered:false,maxRetransmits:0}));else pc.ondatachannel=e=>attach(e.channel);
- pc.onicecandidate=e=>{if(e.candidate&&db&&roomRef)roomRef.child('signals').child(id).child(initiator?'offerCandidates':'answerCandidates').push(e.candidate.toJSON())};
- pc.onconnectionstatechange=()=>{if(['failed','closed','disconnected'].includes(pc.connectionState)){setStatus(`Room ${roomCode} · ${pc.connectionState}`)}};
- peers[id]={pc,channel:null};return pc;
+function peerConnection(id,initiator){
+ const pc=new RTCPeerConnection({iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun.cloudflare.com:3478'}
+ ]});
+ const signalKey=initiator?id:myId;
+ function attach(ch){
+  peers[id].channel=ch;
+  ch.onopen=()=>{setStatus(`Room ${roomCode} · connected`);toast('Friend connected!')};
+  ch.onclose=()=>setStatus(`Room ${roomCode} · reconnect needed`);
+  ch.onmessage=e=>{
+   try{
+    const data=JSON.parse(e.data);
+    if(data.type==='state')applyRemote(id,data);
+    if(data.type==='ball'&&!isHost){
+     ballState.p.set(data.p.x,data.p.y,data.p.z);
+     ballState.v.set(data.v.x,data.v.y,data.v.z);
+    }
+   }catch(err){console.warn('Bad peer packet',err)}
+  };
+ }
+ if(initiator)attach(pc.createDataChannel('pocket-arena',{ordered:false,maxRetransmits:0}));
+ else pc.ondatachannel=e=>attach(e.channel);
+ pc.onicecandidate=e=>{
+  if(!e.candidate||!db||!roomRef)return;
+  const bucket=initiator?'hostCandidates':'guestCandidates';
+  roomRef.child('signals').child(signalKey).child(bucket).push(e.candidate.toJSON()).catch(console.warn);
+ };
+ pc.onconnectionstatechange=()=>{if(['failed','closed','disconnected'].includes(pc.connectionState))setStatus(`Room ${roomCode} · ${pc.connectionState}`)};
+ peers[id]={pc,channel:null,signalKey};
+ return pc;
 }
 async function connectRoom(hosting){
  if(!db){toast('Firebase failed to initialize. Check your connection.');return}
  if(!roomCode)return toast('Room code missing');
- showGame();setStatus('Connecting to Firebase…');
- roomRef=db.ref('pocketArenaRooms/'+roomCode);
+ showGame();setStatus('Signing in to Firebase…');
  try{
-  if(!auth.currentUser) await auth.signInAnonymously(); myId=auth.currentUser.uid;
+  await firebase.auth().signInAnonymously();
+  roomRef=db.ref('pocketArenaRooms/'+roomCode);
   if(hosting){
    await roomRef.set({host:myId,createdAt:firebase.database.ServerValue.TIMESTAMP,players:{[myId]:{name:$('nickname').value.trim()||'Player',team:'blue',joinedAt:Date.now()}}});
   }else{
-   const snap=await roomRef.once('value');if(!snap.exists())return toast('Room not found — ask the host to create it.');
+   const snap=await roomRef.once('value');
+   if(!snap.exists()){toast('Room not found — ask the host to create it.');return}
    await roomRef.child('players/'+myId).set({name:$('nickname').value.trim()||'Player',team:'orange',joinedAt:Date.now()});
   }
-  roomRef.child('players').on('child_added',s=>{if(s.key!==myId)setupPeer(s.key,s.val(),hosting)});
-  roomRef.child('players').on('child_removed',s=>{const p=peers[s.key];if(p){p.pc.close();delete peers[s.key]}if(remoteCars[s.key]){scene.remove(remoteCars[s.key].root);delete remoteCars[s.key]}});
-  roomRef.child('players').on('value',snap=>{const count=snap.numChildren();setStatus(`Room ${roomCode} · ${count} player${count===1?'':'s'}`)});
+  roomRef.child('players').on('child_added',s=>{
+   if(s.key!==myId)setupPeer(s.key,s.val(),hosting).catch(e=>{console.error(e);toast('Peer setup failed: '+e.message)});
+  });
+  roomRef.child('players').on('child_removed',s=>{
+   const p=peers[s.key];if(p){p.pc.close();delete peers[s.key]}
+   if(remoteCars[s.key]){scene.remove(remoteCars[s.key].root);delete remoteCars[s.key]}
+  });
+  roomRef.child('players').on('value',snap=>setStatus(`Room ${roomCode} · ${snap.numChildren()} player${snap.numChildren()===1?'':'s'}`));
   setStatus(`Room ${roomCode} · waiting for players`);toast(`Room ${roomCode} ready — share the invite!`);
- }catch(e){console.error(e);toast('Firebase error: '+e.message);setStatus('Connection error — check database rules')}
+ }catch(e){console.error(e);toast('Firebase error: '+e.message);setStatus('Connection error — check Firebase rules')}
 }
 async function setupPeer(id,info,hosting){
- if(peers[id])return;const pc=peerConnection(id,hosting);peerMeta[id]=info||{};makeRemote(id,info?.name||'Friend',info?.team==='orange'?0xff8b35:0x11aee0);
- const signalRef=roomRef.child('signals').child(hosting?myId:id);
- try{
-  if(hosting){
-   const offer=await pc.createOffer();await pc.setLocalDescription(offer);await roomRef.child('signals').child(id).child('offer').set({type:offer.type,sdp:offer.sdp});
-   roomRef.child('signals').child(id).child('answer').on('value',async s=>{const a=s.val();if(a&&!pc.currentRemoteDescription)await pc.setRemoteDescription(a).catch(console.warn)});
-   roomRef.child('signals').child(myId).child('answerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
-   roomRef.child('signals').child(myId).child('offerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
-  }else{
-   const offerSnap=await roomRef.child('signals').child(myId).child('offer').once('value');const offer=offerSnap.val();if(!offer){toast('Host offer not ready; try joining again in a moment.');return}
-   await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await roomRef.child('signals').child(myId).child('answer').set({type:answer.type,sdp:answer.sdp});
-   roomRef.child('signals').child(myId).child('offerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
-   roomRef.child('signals').child(myId).child('answerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
-  }
- }catch(e){console.error(e);toast('WebRTC handshake failed: '+e.message)}
+ if(peers[id])return;
+ peerMeta[id]=info||{};
+ const pc=peerConnection(id,hosting);
+ makeRemote(id,info?.name||'Friend',info?.team==='orange'?0xff8b35:0x11aee0);
+ const signalKey=hosting?id:myId;
+ const sig=roomRef.child('signals').child(signalKey);
+ if(hosting){
+  // Host creates one offer per joining player and listens for that player's answer/candidates.
+  sig.child('guestCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(console.warn));
+  sig.child('answer').on('value',async s=>{
+   const a=s.val();
+   if(a&&!pc.currentRemoteDescription)try{await pc.setRemoteDescription(a)}catch(e){console.warn(e)}
+  });
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await sig.child('offer').set({type:offer.type,sdp:offer.sdp});
+ }else{
+  // Wait for the host's offer instead of racing the Firebase child_added event.
+  const offer=await new Promise((resolve,reject)=>{
+   let finished=false;
+   const timer=setTimeout(()=>{if(!finished){finished=true;offerRef.off('value',listener);reject(new Error('Timed out waiting for host offer'))}},12000);
+   const offerRef=sig.child('offer');
+   const listener=s=>{const value=s.val();if(value&&!finished){finished=true;clearTimeout(timer);offerRef.off('value',listener);resolve(value)}};
+   offerRef.on('value',listener);
+  });
+  await pc.setRemoteDescription(offer);
+  sig.child('hostCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(console.warn));
+  sig.child('guestCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(console.warn));
+  const answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await sig.child('answer').set({type:answer.type,sdp:answer.sdp});
+ }
 }
-function applyRemote(id,d){let c=remoteCars[id];if(!c)c=makeRemote(id,peerMeta[id]?.name||'Friend',0xff8b35);c.root.position.set(d.p.x,d.p.y,d.p.z);c.yaw=d.yaw;c.root.rotation.y=d.yaw;c.boost=d.boost||0}
+function applyRemote(id,d){let c=remoteCars[id];if(!c)c=makeRemote(id,peerMeta[id]?.name||'Friend',0xff8b35);c.targetPos.set(d.p.x,d.p.y,d.p.z);c.targetYaw=d.yaw;c.boost=d.boost||0}
 function sendState(){const payload=JSON.stringify({type:'state',p:{x:me.root.position.x,y:me.root.position.y,z:me.root.position.z},yaw:me.yaw,boost:me.boost});for(const p of Object.values(peers))if(p.channel?.readyState==='open')p.channel.send(payload)}
 function syncBall(){if(!isHost)return;const payload=JSON.stringify({type:'ball',p:{x:ball.position.x,y:ball.position.y,z:ball.position.z},v:{x:ballState.v.x,y:ballState.v.y,z:ballState.v.z}});for(const p of Object.values(peers))if(p.channel?.readyState==='open')p.channel.send(payload)}
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.035,(now-lastTick)/1000||.016);lastTick=now;if(gameStarted){const inp=input();if(inp.reset)resetCar();syncLocalCar(dt,inp);
@@ -222,7 +315,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min(.035,(now-lastT
  $('clock').textContent=Math.floor(Math.max(0,matchEnd-now)/60000)+':'+String(Math.floor(Math.max(0,matchEnd-now)/1000)%60).padStart(2,'0');
  $('boostLabel').textContent='BOOST '+Math.round(me.boost)+'%';$('boostBar').style.width=me.boost+'%';updateCamera(dt);
  }else{camera.position.lerp(new THREE.Vector3(28,24,35),.012);camera.lookAt(0,0,0);ball.rotation.y+=dt*.4}
- for(const c of Object.values(remoteCars)){for(const w of c.wheels)w.rotation.x+=dt*5}
+ for(const c of Object.values(remoteCars)){c.root.position.lerp(c.targetPos,1-Math.pow(.001,dt));let da=((c.targetYaw-c.root.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;c.root.rotation.y+=da*(1-Math.pow(.001,dt));for(const w of c.wheels)w.rotation.x+=dt*5}
  ball.rotation.x+=dt*.35;renderer.render(scene,camera)}
 requestAnimationFrame(loop);
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
