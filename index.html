@@ -1,0 +1,713 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Turbo Rivals</title>
+<meta name="theme-color" content="#080d1c">
+<style>
+:root {
+  --bg:#080d1c;--panel:#111b30;--blue:#36baff;
+  --orange:#ff984c;--text:#f4f8ff;--muted:#8b9bb5;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;background:var(--bg);color:var(--text);
+ font-family:Inter,system-ui,Arial,sans-serif;
+ overflow:hidden;user-select:none
+}
+button{
+ border:0;border-radius:12px;padding:14px 22px;
+ background:linear-gradient(120deg,#2388ff,#36c9f4);
+ color:white;font-weight:900;font-size:15px;
+ cursor:pointer
+}
+button:disabled{opacity:.5}
+.screen{
+ position:fixed;inset:0;display:flex;align-items:center;
+ justify-content:center;padding:20px;
+ background:radial-gradient(ellipse at 50% 20%,#172d50,#080d1c 70%);
+}
+.hidden{display:none!important}
+.menu{width:min(480px,100%);text-align:center}
+.logo{font-size:clamp(40px,10vw,65px);font-weight:1000;
+ letter-spacing:-4px;line-height:1}
+.logo span{color:var(--blue)}
+.subtitle{color:var(--muted);letter-spacing:4px;font-size:11px;margin:12px}
+.panel{
+ background:rgba(19,31,53,.92);border:1px solid #263b5b;
+ border-radius:20px;padding:24px;margin-top:30px;
+ box-shadow:0 20px 80px #0008
+}
+.panel h2{margin-top:0}
+input{
+ width:100%;padding:14px;border-radius:10px;
+ border:1px solid #344663;background:#080f20;color:white;
+ margin:8px 0 14px;font-size:16px
+}
+.small{color:var(--muted);font-size:12px;line-height:1.6}
+.status{color:var(--blue);font-size:13px;margin:14px}
+#game{position:fixed;inset:0;background:#07101f}
+canvas{width:100%;height:100%;display:block}
+.hud{
+ position:absolute;top:15px;left:50%;transform:translateX(-50%);
+ display:flex;align-items:center;gap:18px;padding:10px 22px;
+ background:#0b1426dd;border:1px solid #344b6a;border-radius:14px;
+ font-weight:900;white-space:nowrap
+}
+.blue{color:var(--blue)}.orange{color:var(--orange)}
+#clock{font-size:23px}
+#exit{
+ position:absolute;top:15px;left:15px;background:#253650;
+ padding:10px 15px
+}
+.controls{
+ position:absolute;bottom:20px;left:0;right:0;
+ display:flex;justify-content:space-between;padding:0 24px;
+ pointer-events:none
+}
+.control-group{display:flex;gap:12px;align-items:end}
+.ctrl{
+ pointer-events:auto;width:65px;height:65px;border-radius:50%;
+ background:#192d49d9;border:2px solid #52708e;
+ display:grid;place-items:center;font-weight:900;
+ touch-action:none;box-shadow:0 5px 20px #0006
+}
+.ctrl.boost{background:#a94b19dd;border-color:#ffad60}
+.ctrl.jump{background:#1764a9dd;border-color:#58baff}
+#message{
+ position:absolute;top:24%;left:50%;transform:translateX(-50%);
+ font-size:clamp(24px,5vw,48px);font-weight:1000;
+ text-shadow:0 5px 20px black;pointer-events:none
+}
+#fuel{
+ position:absolute;bottom:100px;right:25px;width:110px;
+ height:8px;border-radius:9px;background:#26344c;overflow:hidden
+}
+#fuelbar{height:100%;width:100%;background:#ff9c43}
+@media(max-width:600px){
+ .hud{top:12px;gap:10px;padding:8px 13px}
+ .controls{bottom:18px;padding:0 12px}
+ .ctrl{width:58px;height:58px}
+ #fuel{bottom:91px}
+}
+</style>
+</head>
+<body>
+
+<div id="menu" class="screen">
+ <div class="menu">
+  <div class="logo">TURBO<span>RIVALS</span></div>
+  <div class="subtitle">ARCADE CAR SOCCER</div>
+  <div class="panel">
+   <h2>ENTER THE ARENA</h2>
+   <p class="small">Rocket-powered cars. One ball. One winner.</p>
+   <input id="nickname" maxlength="16" placeholder="Your player name" value="Racer">
+   <button id="play" style="width:100%">FIND ONLINE MATCH</button>
+   <div id="status" class="status">Connecting to Firebase...</div>
+   <p class="small">WASD / Arrow keys to drive · Space to jump · Shift to boost</p>
+  </div>
+  <p class="small">TURBO RIVALS · ORIGINAL ARCADE GAME</p>
+ </div>
+</div>
+
+<div id="game" class="hidden">
+ <canvas id="canvas"></canvas>
+ <button id="exit">EXIT</button>
+ <div class="hud">
+  <span class="blue" id="blueScore">BLUE 0</span>
+  <span id="clock">02:00</span>
+  <span class="orange" id="orangeScore">ORANGE 0</span>
+ </div>
+ <div id="message"></div>
+ <div id="fuel"><div id="fuelbar"></div></div>
+ <div class="controls">
+  <div class="control-group">
+   <div class="ctrl" data-key="left">◀</div>
+   <div class="ctrl" data-key="right">▶</div>
+  </div>
+  <div class="control-group">
+   <div class="ctrl jump" data-key="jump">JUMP</div>
+   <div class="ctrl boost" data-key="boost">BOOST</div>
+  </div>
+ </div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+ getDatabase,ref,push,get,set,update,onValue,runTransaction,
+ onDisconnect,remove
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+import {
+ getAuth,signInAnonymously,onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+/* ==========================================
+   1. FIREBASE CONFIGURATION
+   Replace these values when your credentials
+   are ready. Firebase web config is not a
+   server secret. Protect data with rules.
+========================================== */
+
+const firebaseConfig = {
+ apiKey:"PASTE_API_KEY",
+ authDomain:"YOUR_PROJECT.firebaseapp.com",
+ databaseURL:"https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+ projectId:"YOUR_PROJECT",
+ storageBucket:"YOUR_PROJECT.appspot.com",
+ messagingSenderId:"YOUR_SENDER_ID",
+ appId:"YOUR_APP_ID"
+};
+
+/* ==========================================
+   2. OPTIONAL GITHUB ASSETS
+
+   Put direct raw GitHub image URLs here.
+   The game has original canvas-drawn fallback
+   graphics when no images are configured.
+
+   Asset collection:
+   github.com/Tiddybub/2d-assets
+========================================== */
+
+const ASSETS = {
+ blueCar:"",
+ orangeCar:"",
+ arena:"",
+ ball:""
+};
+
+const loadedAssets={};
+for(const [name,url] of Object.entries(ASSETS)){
+ if(url){
+  const img=new Image();
+  img.crossOrigin="anonymous";
+  img.src=url;
+  loadedAssets[name]=img;
+ }
+}
+
+/* ==========================================
+   3. FIREBASE INITIALIZATION
+========================================== */
+
+let app,auth,db,user=null,connected=false;
+let roomId=null,roomRef=null,slot=0,isHost=false;
+let roomData=null,unsubscribe=null;
+let lastPublish=0,lastHostTick=0;
+let searching=false,matchEnded=false;
+
+const $=id=>document.getElementById(id);
+const status=t=>$("status").textContent=t;
+
+try{
+ if(firebaseConfig.apiKey==="PASTE_API_KEY"){
+  status("Add Firebase credentials to connect.");
+ }else{
+  app=initializeApp(firebaseConfig);
+  auth=getAuth(app);
+  db=getDatabase(app);
+  onAuthStateChanged(auth,async u=>{
+   if(u){
+    user=u;connected=true;
+    status("Connected · Ready to play");
+    $("play").disabled=false;
+   }else{
+    try{await signInAnonymously(auth)}
+    catch(e){status("Firebase auth error: "+e.message)}
+   }
+  });
+  $("play").disabled=true;
+  signInAnonymously(auth).catch(e=>status(e.message));
+ }
+}catch(e){status("Firebase setup: "+e.message)}
+
+$("play").disabled=true;
+
+/* ==========================================
+   4. MATCHMAKING
+
+   Looks for a waiting room, joins it, or
+   creates a new one.
+========================================== */
+
+async function findMatch(){
+ if(!db||!user||searching)return;
+ searching=true;
+ $("play").disabled=true;
+ status("Searching for an opponent...");
+
+ try{
+  const roomsSnap=await get(ref(db,"rooms"));
+  let joined=false;
+
+  if(roomsSnap.exists()){
+   const rooms=roomsSnap.val();
+   for(const [id,data] of Object.entries(rooms)){
+    if(data.status!=="waiting")continue;
+    if(data.players&&Object.keys(data.players).length>=2)continue;
+
+    const target=ref(db,"rooms/"+id);
+    const result=await runTransaction(target,room=>{
+     if(!room||room.status!=="waiting")return;
+     room.players=room.players||{};
+     if(room.players[user.uid])return room;
+     if(Object.keys(room.players).length>=2)return;
+     room.players[user.uid]={
+      name:getName(),slot:1,x:1400,y:480,
+      angle:Math.PI,boost:100
+     };
+     room.status="playing";
+     room.startedAt=Date.now();
+     room.ball=room.ball||{x:800,y:280,vx:0,vy:0};
+     room.score=room.score||{blue:0,orange:0};
+     return room;
+    });
+
+    if(result.committed&&result.snapshot.exists()){
+     const value=result.snapshot.val();
+     if(value.players&&value.players[user.uid]){
+      roomId=id;roomRef=target;slot=1;
+      isHost=false;joined=true;break;
+     }
+    }
+   }
+  }
+
+  if(!joined){
+   const newRoom=push(ref(db,"rooms"));
+   roomId=newRoom.key;roomRef=newRoom;slot=0;isHost=true;
+   await set(roomRef,{
+    status:"waiting",
+    hostUid:user.uid,
+    createdAt:Date.now(),
+    players:{
+     [user.uid]:{
+      name:getName(),slot:0,x:200,y:480,
+      angle:0,boost:100
+     }
+    },
+    ball:{x:800,y:280,vx:0,vy:0},
+    score:{blue:0,orange:0},
+    timeLeft:120
+   });
+
+   await onDisconnect(ref(db,`rooms/${roomId}/players/${user.uid}`)).remove();
+   status("Room created · Waiting for opponent...");
+   waitForOpponent();
+  }
+
+  if(joined)startMatch();
+ }catch(e){
+  status("Matchmaking error: "+e.message);
+  searching=false;$("play").disabled=false;
+ }
+}
+
+function getName(){
+ return $("nickname").value.trim().slice(0,16)||"Racer";
+}
+
+let waitTimer;
+function waitForOpponent(){
+ clearInterval(waitTimer);
+ waitTimer=setInterval(async()=>{
+  if(!roomRef){clearInterval(waitTimer);return}
+  const snap=await get(roomRef);
+  if(!snap.exists()){
+   clearInterval(waitTimer);searching=false;
+   status("Room closed. Try again.");
+   $("play").disabled=false;return;
+  }
+  const data=snap.val();
+  if(data.status==="playing"){
+   clearInterval(waitTimer);
+   startMatch();
+  }
+ },1200);
+}
+
+/* ==========================================
+   5. GAME WORLD
+========================================== */
+
+const canvas=$("canvas");
+const ctx=canvas.getContext("2d");
+const W=1600,H=900;
+let scale=1,offsetX=0,offsetY=0;
+
+function resize(){
+ canvas.width=innerWidth*devicePixelRatio;
+ canvas.height=innerHeight*devicePixelRatio;
+ scale=Math.min(canvas.width/W,canvas.height/H);
+ offsetX=(canvas.width-W*scale)/2;
+ offsetY=(canvas.height-H*scale)/2;
+}
+addEventListener("resize",resize);resize();
+
+const keys={};
+const keyMap={
+ ArrowLeft:"left",a:"left",
+ ArrowRight:"right",d:"right",
+ ArrowUp:"jump",w:"jump",
+ " ":"jump",Shift:"boost",s:"boost"
+};
+
+addEventListener("keydown",e=>{
+ const k=keyMap[e.key]||keyMap[e.key.toLowerCase()];
+ if(k){keys[k]=true;e.preventDefault()}
+});
+addEventListener("keyup",e=>{
+ const k=keyMap[e.key]||keyMap[e.key.toLowerCase()];
+ if(k)keys[k]=false;
+});
+
+document.querySelectorAll(".ctrl").forEach(el=>{
+ const k=el.dataset.key;
+ el.addEventListener("pointerdown",e=>{
+  e.preventDefault();keys[k]=true;el.setPointerCapture(e.pointerId);
+ });
+ ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>
+  el.addEventListener(ev,()=>keys[k]=false)
+ );
+});
+
+let me={x:200,y:480,vx:0,vy:0,angle:0,boost:100,onGround:true};
+let ball={x:800,y:280,vx:0,vy:0};
+let players={};
+let scores={blue:0,orange:0};
+let timeLeft=120;
+let active=false;
+let frame=0;
+
+function startMatch(){
+ if(active)return;
+ searching=false;active=true;matchEnded=false;
+ clearInterval(waitTimer);
+ $("menu").classList.add("hidden");
+ $("game").classList.remove("hidden");
+ status("Match started!");
+
+ me={
+  x:slot===0?230:1370,y:480,vx:0,vy:0,
+  angle:slot===0?0:Math.PI,boost:100,onGround:true
+ };
+
+ if(unsubscribe)unsubscribe();
+ unsubscribe=onValue(roomRef,snap=>{
+  if(!snap.exists()){leaveMatch(false);return}
+  roomData=snap.val();
+  players=roomData.players||{};
+  ball=roomData.ball||ball;
+  scores=roomData.score||scores;
+  timeLeft=roomData.timeLeft??120;
+  updateHUD();
+  if(roomData.status==="finished")finishMatch();
+ });
+
+ requestAnimationFrame(loop);
+}
+
+function updateHUD(){
+ $("blueScore").textContent="BLUE "+(scores.blue||0);
+ $("orangeScore").textContent="ORANGE "+(scores.orange||0);
+ const s=Math.max(0,timeLeft|0);
+ $("clock").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+
+ String(s%60).padStart(2,"0");
+ $("fuelbar").style.width=me.boost+"%";
+}
+
+/* ==========================================
+   6. PLAYER PHYSICS
+========================================== */
+
+function updateCar(dt){
+ const speed=keys.boost&&me.boost>0?0.48:0.25;
+ const dir=keys.left?-1:keys.right?1:0;
+
+ me.vx+=dir*speed*dt*60;
+ me.vx*=Math.pow(.985,dt*60);
+ me.vx=Math.max(-10,Math.min(10,me.vx));
+
+ if(keys.jump&&me.onGround){
+  me.vy=-12;me.onGround=false;
+ }
+ if(keys.boost&&me.boost>0){
+  me.vx+=(slot===0?1:-1)*0.12*dt*60;
+  me.vy-=0.15*dt*60;
+  me.boost=Math.max(0,me.boost-0.7*dt*60);
+ }else{
+  me.boost=Math.min(100,me.boost+0.12*dt*60);
+ }
+
+ me.vy+=0.55*dt*60;
+ me.x+=me.vx*dt*60;
+ me.y+=me.vy*dt*60;
+
+ if(me.y>H-125){
+  me.y=H-125;me.vy=0;me.onGround=true;
+ }
+ if(me.y<70){me.y=70;me.vy=0}
+ me.x=Math.max(65,Math.min(W-65,me.x));
+
+ if(Math.abs(me.vx)>0.4)me.angle=Math.atan2(me.vy,me.vx);
+}
+
+/* ==========================================
+   7. HOST AUTHORITATIVE DEMO SIMULATION
+
+   Host publishes the ball and score state.
+   For a competitive production game, move
+   this simulation to a trusted game server.
+========================================== */
+
+function hostPhysics(dt){
+ if(!isHost||!roomData||roomData.status!=="playing")return;
+
+ ball.vy+=0.38*dt*60;
+ ball.x+=ball.vx*dt*60;
+ ball.y+=ball.vy*dt*60;
+ ball.vx*=0.997;ball.vy*=0.997;
+
+ if(ball.y>H-100){
+  ball.y=H-100;ball.vy*=-0.76;
+ }
+ if(ball.y<45){
+  ball.y=45;ball.vy*=-0.8;
+ }
+
+ // Side and goal collisions.
+ if(ball.x<45){
+  if(ball.y>330&&ball.y<650){
+   scores.orange=(scores.orange||0)+1;
+   resetBall();
+  }else{
+   ball.x=45;ball.vx=Math.abs(ball.vx)*0.8;
+  }
+ }
+ if(ball.x>W-45){
+  if(ball.y>330&&ball.y<650){
+   scores.blue=(scores.blue||0)+1;
+   resetBall();
+  }else{
+   ball.x=W-45;ball.vx=-Math.abs(ball.vx)*0.8;
+  }
+ }
+
+ // Collision with cars.
+ for(const p of Object.values(players)){
+  const dx=ball.x-(p.x||0),dy=ball.y-(p.y||0);
+  const dist=Math.hypot(dx,dy);
+  if(dist<68&&dist>0){
+   const nx=dx/dist,ny=dy/dist;
+   ball.x+=nx*(68-dist);
+   ball.y+=ny*(68-dist);
+   ball.vx+=nx*5;ball.vy+=ny*5;
+  }
+ }
+
+ if(Date.now()-lastHostTick>1000){
+  lastHostTick=Date.now();
+  timeLeft=Math.max(0,timeLeft-1);
+  if(timeLeft===0){
+   update(roomRef,{status:"finished"});
+  }
+ }
+
+ if(Date.now()-lastPublish>65){
+  lastPublish=Date.now();
+  update(roomRef,{
+   ball,score:scores,timeLeft
+  }).catch(console.error);
+ }
+}
+
+function resetBall(){
+ ball={x:800,y:280,vx:0,vy:0};
+}
+
+/* ==========================================
+   8. DRAWING
+========================================== */
+
+function roundedRect(x,y,w,h,r,color){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
+}
+
+function drawArena(){
+ const g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,"#102341");
+ g.addColorStop(1,"#081326");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+ // Stadium lights and scenery.
+ for(let i=0;i<30;i++){
+  ctx.fillStyle=i%2?"#18385a":"#142b49";
+  ctx.fillRect(i*56,120,26,170);
+ }
+ ctx.fillStyle="#132b46";
+ ctx.fillRect(0,650,W,250);
+
+ // Floor.
+ const floor=ctx.createLinearGradient(0,650,0,900);
+ floor.addColorStop(0,"#174c62");
+ floor.addColorStop(1,"#10243b");
+ ctx.fillStyle=floor;ctx.fillRect(0,650,W,250);
+
+ ctx.strokeStyle="#6bb8d7";ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(0,650);ctx.lineTo(W,650);ctx.stroke();
+ ctx.beginPath();ctx.arc(800,650,110,Math.PI,0);ctx.stroke();
+
+ // Goal areas.
+ ctx.fillStyle="#208bff55";ctx.fillRect(0,330,65,320);
+ ctx.fillStyle="#ff974455";ctx.fillRect(W-65,330,65,320);
+ ctx.strokeStyle="#47baff";ctx.lineWidth=9;
+ ctx.strokeRect(8,330,50,320);
+ ctx.strokeStyle="#ff9c53";
+ ctx.strokeRect(W-58,330,50,320);
+
+ ctx.strokeStyle="#ffffff17";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(800,330);ctx.lineTo(800,650);ctx.stroke();
+}
+
+function drawCar(p,team,name){
+ const x=p.x,y=p.y;
+ const blue=team===0;
+ const color=blue?"#36baff":"#ff984c";
+ const asset=loadedAssets[blue?"blueCar":"orangeCar"];
+
+ ctx.save();ctx.translate(x,y);
+ ctx.rotate(p.angle||0);
+
+ if(asset?.complete&&asset.naturalWidth){
+  ctx.drawImage(asset,-62,-32,124,64);
+ }else{
+  // Original vector car design.
+  ctx.shadowBlur=18;ctx.shadowColor=color;
+  roundedRect(-55,-23,110,39,13,color);
+  ctx.shadowBlur=0;
+  roundedRect(-22,-42,49,28,10,blue?"#a6e8ff":"#ffd0a3");
+  roundedRect(-17,-37,37,17,5,"#18324d");
+  roundedRect(36,-13,14,12,4,"#fff1be");
+  roundedRect(-54,-13,12,12,3,"#ffdf87");
+  for(const wx of [-33,35]){
+   ctx.fillStyle="#07111e";
+   ctx.beginPath();ctx.arc(wx,18,13,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle="#8aa3bd";ctx.lineWidth=4;
+   ctx.beginPath();ctx.arc(wx,18,6,0,Math.PI*2);ctx.stroke();
+  }
+  ctx.fillStyle="#ffffff";
+  ctx.font="bold 11px Arial";ctx.textAlign="center";
+  ctx.fillText(blue?"TR":"TR",0,-8);
+ }
+ ctx.restore();
+
+ ctx.fillStyle="#fff";ctx.font="bold 16px Arial";
+ ctx.textAlign="center";ctx.fillText(name||"Racer",x,y-54);
+}
+
+function drawBall(){
+ ctx.save();
+ ctx.shadowBlur=24;ctx.shadowColor="#ffffff";
+ const gr=ctx.createRadialGradient(ball.x-9,ball.y-10,3,ball.x,ball.y,27);
+ gr.addColorStop(0,"#fff");gr.addColorStop(1,"#9bb8d0");
+ ctx.fillStyle=gr;
+ ctx.beginPath();ctx.arc(ball.x,ball.y,26,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle="#536b85";ctx.lineWidth=3;ctx.stroke();
+ ctx.restore();
+}
+
+function render(){
+ ctx.setTransform(1,0,0,1,0,0);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.setTransform(scale,0,0,scale,offsetX,offsetY);
+
+ drawArena();
+ drawBall();
+
+ for(const [uid,p] of Object.entries(players)){
+  drawCar(p,p.slot,p.name);
+ }
+
+ // Draw local car above its replicated position.
+ drawCar({...me},slot,getName());
+}
+
+/* ==========================================
+   9. MAIN GAME LOOP
+========================================== */
+
+let previous=0;
+function loop(timestamp){
+ if(!active)return;
+ const dt=Math.min((timestamp-previous)/1000||0.016,0.04);
+ previous=timestamp;
+
+ updateCar(dt);
+
+ if(Date.now()-lastPublish>90){
+  lastPublish=Date.now();
+  if(roomRef&&user){
+   update(ref(db,`rooms/${roomId}/players/${user.uid}`),{
+    x:me.x,y:me.y,vx:me.vx,vy:me.vy,
+    angle:me.angle,boost:me.boost
+   }).catch(()=>{});
+  }
+ }
+
+ hostPhysics(dt);
+ render();
+ frame++;
+ requestAnimationFrame(loop);
+}
+
+/* ==========================================
+   10. MATCH END / EXIT
+========================================== */
+
+function finishMatch(){
+ if(matchEnded)return;
+ matchEnded=true;active=false;
+ const winner=scores.blue===scores.orange?"DRAW":
+  scores.blue>scores.orange?"BLUE WINS!":"ORANGE WINS!";
+ $("message").textContent=winner;
+ setTimeout(()=>{
+  leaveMatch(true);
+ },3500);
+}
+
+async function leaveMatch(removeRoom=true){
+ active=false;searching=false;
+ clearInterval(waitTimer);
+ if(unsubscribe){unsubscribe();unsubscribe=null}
+ if(roomRef&&user){
+  try{
+   if(removeRoom&&isHost)await remove(roomRef);
+   else await remove(ref(db,`rooms/${roomId}/players/${user.uid}`));
+  }catch(e){}
+ }
+ roomRef=null;roomId=null;roomData=null;
+ $("game").classList.add("hidden");
+ $("menu").classList.remove("hidden");
+ $("play").disabled=!connected;
+ status(connected?"Connected · Ready to play":"Not connected");
+}
+
+$("exit").addEventListener("click",()=>leaveMatch());
+
+$("play").addEventListener("click",findMatch);
+
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden){
+  Object.keys(keys).forEach(k=>keys[k]=false);
+ }
+});
+
+</script>
+</body>
+</html>
