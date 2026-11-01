@@ -1,1041 +1,233 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#080d1c">
-<title>Turbo Rivals | Online Car Soccer</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rocket League: Pocket Arena</title>
 <style>
-:root {
-  --bg:#080d1c;
-  --panel:#111d32;
-  --blue:#36baff;
-  --orange:#ff914d;
-  --text:#f4f8ff;
-  --muted:#8c9bb5;
-}
-*{box-sizing:border-box}
-body{
- margin:0;background:var(--bg);color:var(--text);
- font-family:Inter,system-ui,Arial,sans-serif;
- overflow:hidden;user-select:none;
-}
-button{
- border:0;border-radius:12px;padding:14px 22px;
- background:linear-gradient(120deg,#2388ff,#36c9f4);
- color:white;font-weight:900;font-size:14px;
- cursor:pointer;touch-action:manipulation;
-}
-button:disabled{opacity:.45;cursor:not-allowed}
-.screen{
- position:fixed;inset:0;display:flex;
- align-items:center;justify-content:center;padding:20px;
- background:radial-gradient(ellipse at 50% 15%,#1a355b,#080d1c 75%);
-}
-.hidden{display:none!important}
-.menu{width:min(460px,100%);text-align:center}
-.logo{
- font-size:clamp(38px,10vw,65px);
- font-weight:1000;letter-spacing:-4px;line-height:1;
-}
-.logo span{color:var(--blue)}
-.subtitle{
- color:var(--muted);letter-spacing:4px;
- font-size:11px;margin:14px 0 25px;
-}
-.panel{
- background:rgba(19,31,53,.94);
- border:1px solid #263c5b;border-radius:20px;
- padding:25px;margin-top:15px;
- box-shadow:0 20px 80px #0008;
-}
-.panel h2{margin:0 0 10px}
-.small{color:var(--muted);font-size:12px;line-height:1.6}
-input{
- width:100%;padding:14px;border-radius:10px;
- border:1px solid #344663;background:#080f20;
- color:white;margin:12px 0;font-size:16px;
-}
-.status{color:var(--blue);font-size:13px;margin:15px 0}
-#game{
- position:fixed;inset:0;background:#07101f;
-}
-canvas{width:100%;height:100%;display:block}
-.hud{
- position:absolute;top:15px;left:50%;
- transform:translateX(-50%);
- display:flex;align-items:center;gap:18px;
- padding:10px 22px;background:#0b1426e8;
- border:1px solid #344b6a;border-radius:14px;
- font-weight:900;white-space:nowrap;
-}
-.blue{color:var(--blue)}
-.orange{color:var(--orange)}
-#clock{font-size:23px}
-#exit{
- position:absolute;top:15px;left:15px;
- background:#253650;padding:10px 15px;
-}
-.controls{
- position:absolute;bottom:20px;left:0;right:0;
- display:flex;justify-content:space-between;
- padding:0 24px;pointer-events:none;
-}
-.control-group{display:flex;gap:12px;align-items:end}
-.ctrl{
- pointer-events:auto;width:65px;height:65px;
- border-radius:50%;background:#192d49e8;
- border:2px solid #52708e;display:grid;
- place-items:center;font-size:13px;font-weight:900;
- touch-action:none;
-}
-.ctrl.jump{background:#1764a9e8;border-color:#58baff}
-.ctrl.boost{background:#a94b19e8;border-color:#ffad60}
-#message{
- position:absolute;top:25%;left:50%;
- transform:translateX(-50%);
- font-size:clamp(24px,5vw,48px);
- font-weight:1000;text-shadow:0 5px 20px black;
- pointer-events:none;white-space:nowrap;
-}
-#fuel{
- position:absolute;bottom:100px;right:25px;
- width:110px;height:8px;border-radius:9px;
- background:#26344c;overflow:hidden;
-}
-#fuelbar{height:100%;width:100%;background:#ff9c43}
-#leaveStatus{
- position:absolute;bottom:12px;left:50%;
- transform:translateX(-50%);
- color:white;font-size:11px;
-}
-@media(max-width:600px){
- .hud{top:12px;gap:10px;padding:8px 13px}
- .controls{bottom:18px;padding:0 12px}
- .ctrl{width:58px;height:58px}
- #fuel{bottom:91px}
-}
+:root{--cyan:#4de7ff;--orange:#ff9a43;--panel:rgba(6,18,35,.82);--line:rgba(255,255,255,.2)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061426;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
+canvas{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.panel{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(9px);border-radius:14px;padding:9px 12px;box-shadow:0 8px 30px #0004}.brand{font-weight:900;letter-spacing:.06em;font-size:13px}.small{font-size:11px;color:#c7d9e8}.score{font-size:24px;font-weight:950;line-height:1.1;text-align:center;white-space:nowrap}.blue{color:var(--cyan)}.orange{color:var(--orange)}#status{font-size:11px;color:#d2e6f6;margin-top:3px;max-width:150px;overflow-wrap:anywhere}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#07172bdc,#07172b90);z-index:10;overflow:auto}
+.card{width:min(520px,100%);max-height:94dvh;overflow:auto;background:rgba(5,18,35,.94);border:1px solid #ffffff28;border-radius:22px;padding:22px;box-shadow:0 20px 70px #0009}
+h1{font-size:clamp(25px,6vw,38px);margin:0 0 4px;line-height:1.05}h1 span{color:var(--cyan)}.subtitle{color:#b9cedf;font-size:13px;margin:8px 0 18px}
+label{display:block;font-size:12px;color:#c4d8e8;margin:12px 0 5px}input,select{width:100%;border:1px solid #ffffff28;border-radius:11px;padding:12px;background:#10283e;color:white;font:inherit;outline:none}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 15px;font-weight:800;color:#061426;background:var(--cyan);touch-action:manipulation}button.secondary{background:#1a344a;color:#eaf7ff;border:1px solid #ffffff20}button.orangeBtn{background:var(--orange)}button:disabled{opacity:.5} .actions{display:flex;gap:8px;margin-top:12px}.actions button{flex:1}.note{font-size:11px;color:#a9c0d4;line-height:1.5;margin-top:13px}.rule{height:1px;background:#ffffff18;margin:16px 0}
+#controls{position:fixed;inset:0;pointer-events:none;display:none}.joystick{position:absolute;left:20px;bottom:max(22px,env(safe-area-inset-bottom));width:124px;height:124px;border-radius:50%;background:#dff8ff18;border:2px solid #dff8ff40;pointer-events:auto;touch-action:none}.stick{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#70edffad;border:2px solid #fff9;box-shadow:0 4px 16px #0005}
+.btnCluster{position:absolute;right:18px;bottom:max(20px,env(safe-area-inset-bottom));display:grid;grid-template-columns:70px 70px;gap:10px;pointer-events:auto}.gameBtn{width:70px;height:70px;border-radius:50%;background:#dff8ff22;color:white;border:2px solid #ffffff55;font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none}.gameBtn.boost{background:#ff9a436e;border-color:#ffbf77}.gameBtn.jump{background:#4de7ff55}.gameBtn.active{filter:brightness(1.5);transform:scale(.96)}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:#061426dd;padding:10px 16px;border-radius:12px;font-weight:900;opacity:0;transition:opacity .2s;pointer-events:none;z-index:5}
+#goalBanner{position:fixed;top:37%;width:100%;text-align:center;font-size:clamp(34px,10vw,72px);font-weight:1000;font-style:italic;letter-spacing:.06em;color:#fff;text-shadow:0 5px 30px #000;opacity:0;pointer-events:none}
+@media(min-width:800px){.joystick{width:140px;height:140px;left:26px;bottom:24px}.stick{left:44px;top:44px}.btnCluster{right:26px;bottom:25px}.gameBtn{width:76px;height:76px}}
 </style>
 </head>
-
 <body>
-
-<div id="menu" class="screen">
- <div class="menu">
-  <div class="logo">TURBO<span>RIVALS</span></div>
-  <div class="subtitle">ONLINE ARCADE CAR SOCCER</div>
-
-  <div class="panel">
-   <h2>ENTER THE ARENA</h2>
-   <p class="small">Drive. Fly. Score. Dominate.</p>
-
-   <input id="nickname" maxlength="16"
-    placeholder="Your player name" value="Racer">
-
-   <button id="play" style="width:100%" disabled>
-    FIND ONLINE MATCH
-   </button>
-
-   <div id="status" class="status">
-    Connecting to Firebase...
-   </div>
-
-   <p class="small">
-    WASD / ARROWS: Drive<br>
-    SPACE: Jump · SHIFT: Boost
-   </p>
-  </div>
-
-  <p class="small">TURBO RIVALS · ORIGINAL GAME</p>
+<div id="hud">
+ <div class="top">
+  <div class="panel"><div class="brand">POCKET <span class="blue">ARENA</span></div><div id="status">Offline practice</div></div>
+  <div class="panel"><div class="score"><span class="blue" id="blueScore">0</span> <span style="color:#fff">:</span> <span class="orange" id="orangeScore">0</span></div><div class="small" style="text-align:center">BLUE · ORANGE</div></div>
+  <div class="panel"><div class="brand" id="clock">3:00</div><div class="small" id="boostLabel">BOOST 100%</div><div style="height:4px;background:#ffffff22;border-radius:8px;margin-top:5px;width:75px;overflow:hidden"><div id="boostBar" style="height:100%;width:100%;background:var(--orange)"></div></div></div>
  </div>
 </div>
-
-<div id="game" class="hidden">
- <canvas id="canvas"></canvas>
-
- <button id="exit">EXIT</button>
-
- <div class="hud">
-  <span class="blue" id="blueScore">BLUE 0</span>
-  <span id="clock">02:00</span>
-  <span class="orange" id="orangeScore">ORANGE 0</span>
+<div id="controls">
+ <div class="joystick" id="joy"><div class="stick" id="stick"></div></div>
+ <div class="btnCluster">
+  <div class="gameBtn" id="brake">BRAKE<br>REVERSE</div>
+  <div class="gameBtn boost" id="boost">⚡<br>BOOST</div>
+  <div class="gameBtn jump" id="jump">⬆<br>JUMP</div>
+  <div class="gameBtn" id="reset">↻<br>RESET</div>
  </div>
-
- <div id="message"></div>
-
- <div id="fuel"><div id="fuelbar"></div></div>
-
- <div class="controls">
-  <div class="control-group">
-   <div class="ctrl" data-key="left">◀</div>
-   <div class="ctrl" data-key="right">▶</div>
-  </div>
-  <div class="control-group">
-   <div class="ctrl jump" data-key="jump">JUMP</div>
-   <div class="ctrl boost" data-key="boost">BOOST</div>
-  </div>
- </div>
-
- <div id="leaveStatus"></div>
 </div>
-
+<div id="toast"></div><div id="goalBanner">GOAL!</div>
+<div id="menu">
+ <div class="card">
+  <h1>ROCKET <span>POCKET</span></h1>
+  <div class="subtitle">A tiny 3D car-soccer arena. Play on mobile or desktop, solo or with friends.</div>
+  <label for="nickname">Player name</label><input id="nickname" maxlength="16" value="Player" autocomplete="nickname">
+  <label for="room">Room code (share with a friend)</label><input id="room" maxlength="12" placeholder="e.g. TURBO7" autocapitalize="characters">
+  <div class="actions"><button id="playSolo">Practice</button><button class="orangeBtn" id="host">Create room</button></div>
+  <div class="actions"><button class="secondary" id="join">Join room</button><button class="secondary" id="copyRoom">Copy invite</button></div>
+  <div class="rule"></div>
+  <div class="small"><b>Controls</b> — Mobile: left stick to steer/drive; boost, jump, brake on right. Desktop: WASD/arrows, Space jump, Shift boost, S/reverse, R reset.</div>
+  <div class="note">Multiplayer uses Firebase Realtime Database for room discovery/signaling and WebRTC data channels for live player state. Enable <b>Anonymous</b> sign-in in Firebase Authentication and set Realtime Database rules to require <code>auth != null</code> for <code>/pocketArenaRooms</code>. The included config is public client config, not a server secret. STUN-only peer connections may fail on restrictive networks. Original prototype; not affiliated with Rocket League.</div>
+ </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script type="module">
-import {initializeApp}
- from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-
-import {getAuth,signInAnonymously,onAuthStateChanged}
- from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
-
-import {
- getDatabase,ref,get,set,update,push,remove,
- onValue,runTransaction,onDisconnect
-} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
-
-/* ==========================================
-   FIREBASE CONFIGURATION
-========================================== */
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 const firebaseConfig = {
- apiKey:"AIzaSyDZT_d5peCD3aiHWlLjK8W7Ct2f5Z3_r2I",
- authDomain:"rock-league-swipe.firebaseapp.com",
- databaseURL:"https://rock-league-swipe-default-rtdb.firebaseio.com",
- projectId:"rock-league-swipe",
- storageBucket:"rock-league-swipe.firebasestorage.app",
- messagingSenderId:"450830531157",
- appId:"1:450830531157:web:ef25a0a89d71e0520432dc",
- measurementId:"G-DJHLY3FH8G"
+  apiKey: "AIzaSyDZT_d5peCD3aiHWlLjK8W7Ct2f5Z3_r2I",
+  authDomain: "rock-league-swipe.firebaseapp.com",
+  databaseURL: "https://rock-league-swipe-default-rtdb.firebaseio.com",
+  projectId: "rock-league-swipe",
+  storageBucket: "rock-league-swipe.firebasestorage.app",
+  messagingSenderId: "450830531157",
+  appId: "1:450830531157:web:ef25a0a89d71e0520432dc",
+  measurementId: "G-DJHLY3FH8G"
 };
 
-/* ==========================================
-   OPTIONAL GITHUB ARTWORK
-   Replace empty strings with direct image URLs.
-========================================== */
-
-const ASSETS={
- blueCar:"",
- orangeCar:"",
- arena:"",
- ball:""
-};
-
-const images={};
-
-for(const [key,url] of Object.entries(ASSETS)){
- if(!url)continue;
- const img=new Image();
- img.crossOrigin="anonymous";
- img.src=url;
- images[key]=img;
-}
-
-/* ==========================================
-   FIREBASE
-========================================== */
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getDatabase(app);
-
+let db=null, auth=null, roomRef=null, roomCode='', myId=crypto.randomUUID?.()||Math.random().toString(36).slice(2), peers={}, peerMeta={}, isHost=false, gameStarted=false, matchEnd=0;
+try { firebase.initializeApp(firebaseConfig); db=firebase.database(); auth=firebase.auth(); } catch(e){ console.warn('Firebase init:',e); }
 const $=id=>document.getElementById(id);
-
-let user=null;
-let connected=false;
-let roomId=null;
-let roomRef=null;
-let slot=0;
-let isHost=false;
-let roomData=null;
-let unsubscribe=null;
-let searching=false;
-let active=false;
-let matchEnded=false;
-let waitTimer=null;
-let presenceRef=null;
-
-function status(message){
- $("status").textContent=message;
-}
-
-function playerName(){
- return $("nickname").value.trim().slice(0,16)||"Racer";
-}
-
-onAuthStateChanged(auth,async currentUser=>{
- if(currentUser){
-  user=currentUser;
-  connected=true;
-
-  try{
-   presenceRef=ref(db,"presence/"+user.uid);
-   await onDisconnect(presenceRef).remove();
-   await set(presenceRef,{
-    online:true,
-    lastSeen:Date.now()
-   });
-
-   $("play").disabled=false;
-   status("Connected · Ready to play");
-  }catch(error){
-   status("Database error: "+error.message);
-  }
- }else{
-  connected=false;
-  $("play").disabled=true;
-  status("Signing in...");
-  signInAnonymously(auth).catch(error=>{
-   status("Authentication error: "+error.message);
-  });
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x07182b); scene.fog=new THREE.Fog(0x07182b,35,100);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,180);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.7)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xbfeaff,0x243344,2.0));
+const sun=new THREE.DirectionalLight(0xffffff,2.4); sun.position.set(-8,15,6); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+const mat=(color,roughness=.65,metalness=.05)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+const turf=mat(0x14784e), dark=mat(0x0a2e43), white=mat(0xe9fbff), cyan=mat(0x23d9ff,.3,.2), orange=mat(0xff8b35,.35,.2), rubber=mat(0x111923), glass=mat(0x102b42,.24,.4), ballMat=mat(0xf5fbff,.28,.12);
+function box(w,h,d,material,x,y,z,parent=scene){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function cylinder(r1,r2,h,material,x,y,z,rx=0,rz=0,parent=scene){const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,20),material);o.position.set(x,y,z);o.rotation.set(rx,0,rz);o.castShadow=true;parent.add(o);return o}
+// Arena, with original primitive-built art so the game doesn't depend on third-party model hosting.
+box(42,.8,64,turf,0,-.55,0); box(42,.12,.18,white,0,-.1,-31.8); box(42,.12,.18,white,0,-.1,31.8);
+for(let x of [-21,21]) box(.25,2,64,cyan,x,.4,0);
+for(let z of [-32,32]){box(42,2,.3,cyan,0,.4,z);box(10,3,.8,dark,0,1,z)}
+for(let z of [-16,0,16]) box(42,.035,.1,white,0,-.12,z);
+const circle=new THREE.Mesh(new THREE.TorusGeometry(5,.06,8,64),white);circle.rotation.x=Math.PI/2;circle.position.y=-.12;scene.add(circle);
+for(let x of [-15,-5,5,15]) for(let z of [-24,-12,12,24]){const pad=new THREE.Mesh(new THREE.CylinderGeometry(.65,.65,.08,24),mat(0xffb342,.35,.2));pad.position.set(x,-.08,z);scene.add(pad);const glow=new THREE.PointLight(0xff9a32,.5,2);glow.position.set(x,.3,z);scene.add(glow)}
+// Goals are openings in end walls, marked by glowing posts.
+for(const z of [-31.5,31.5]) for(const x of [-5,5]){cylinder(.22,.22,5, z<0?cyan:orange,x,2.2,z,0,0); }
+function makeCar(color, accent, label){
+ const root=new THREE.Group(); const body=box(1.8,.48,2.8,mat(color,.3,.35),0,.58,0,root);
+ box(1.12,.55,1.35,glass,0,1.03,-.12,root); box(1.7,.12,.48,mat(accent,.3,.3),0,.82,-1.1,root);
+ const wheels=[];
+ for(const x of [-.98,.98]) for(const z of [-.88,.9]){
+  const wh=cylinder(.38,.38,.25,rubber,x,.35,z,Math.PI/2,0,root); wh.rotation.z=Math.PI/2; wheels.push(wh);
+  const hub=cylinder(.16,.16,.27,mat(accent,.4,.25),x,.35,z,Math.PI/2,0,root);hub.rotation.z=Math.PI/2;
  }
-});
-
-window.addEventListener("beforeunload",()=>{
- if(presenceRef)remove(presenceRef).catch(()=>{});
-});
-
-/* ==========================================
-   MATCHMAKING
-========================================== */
-
-async function findMatch(){
- if(!connected||!user||searching||active)return;
-
- searching=true;
- $("play").disabled=true;
- status("Searching for an opponent...");
-
+ const nose=box(.48,.12,.15,mat(0xffffff,.2),0,.65,-1.43,root);
+ const flame=new THREE.Mesh(new THREE.ConeGeometry(.25,.9,12),mat(accent,.3));flame.rotation.x=-Math.PI/2;flame.position.set(0,.62,1.8);flame.visible=false;root.add(flame);
+ scene.add(root);return {root,wheels,flame,color,label,vel:new THREE.Vector3(),yaw:0,boost:100,jumpV:0,groundY:0,steer:0,drive:0};
+}
+const me=makeCar(0x11aee0,0x6cf2ff,'You');me.root.position.set(0,0,18);
+const ball=new THREE.Mesh(new THREE.SphereGeometry(1.15,32,24),ballMat);ball.castShadow=true;ball.receiveShadow=true;scene.add(ball);ball.position.set(0,1.25,0);
+const seams=new THREE.Group();ball.add(seams);for(let i=0;i<3;i++){const t=new THREE.Mesh(new THREE.TorusGeometry(1.153,.018,5,40),mat(0x1a506b));t.rotation.set(i*.9,i*1.4,0);seams.add(t)}
+const ballState={v:new THREE.Vector3(),p:ball.position};
+const remoteCars={};
+function makeRemote(id,name,color){const c=makeCar(color,color===0xff8b35?0xffd1a5:0x6cf2ff,name||'Friend');c.root.scale.setScalar(.94);remoteCars[id]=c;return c}
+const keys={};let joy={x:0,y:0},touchBoost=false,touchJump=false,touchBrake=false;
+window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
+window.addEventListener('keyup',e=>keys[e.code]=false);
+function bindHold(id,down,up){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture?.(e.pointerId);down();el.classList.add('active')});for(const ev of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(ev,e=>{up();el.classList.remove('active')})}
+bindHold('boost',()=>touchBoost=true,()=>touchBoost=false);bindHold('jump',()=>touchJump=true,()=>touchJump=false);bindHold('brake',()=>touchBrake=true,()=>touchBrake=false);
+$('reset').addEventListener('pointerdown',e=>{e.preventDefault();resetCar()});
+const joyEl=$('joy'),stick=$('stick');let joyPid=null;
+joyEl.addEventListener('pointerdown',e=>{e.preventDefault();joyPid=e.pointerId;joyEl.setPointerCapture(e.pointerId);moveJoy(e)});
+joyEl.addEventListener('pointermove',e=>{if(e.pointerId===joyPid)moveJoy(e)});
+function moveJoy(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.34,len=Math.hypot(dx,dy)||1;joy.x=THREE.MathUtils.clamp(dx/max,-1,1);joy.y=THREE.MathUtils.clamp(dy/max,-1,1);stick.style.transform=`translate(${joy.x*max}px,${joy.y*max}px)`}
+function endJoy(){joyPid=null;joy.x=joy.y=0;stick.style.transform='translate(0px,0px)'}
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])joyEl.addEventListener(ev,endJoy);
+function input(){let steer=joy.x,drive=-joy.y;
+ if(keys.KeyA||keys.ArrowLeft)steer-=1;if(keys.KeyD||keys.ArrowRight)steer+=1;
+ if(keys.KeyW||keys.ArrowUp)drive+=1;if(keys.KeyS||keys.ArrowDown)drive-=1;
+ return {steer:THREE.MathUtils.clamp(steer,-1,1),drive:THREE.MathUtils.clamp(drive,-1,1),boost:touchBoost||keys.ShiftLeft||keys.ShiftRight,jump:touchJump||keys.Space,brake:touchBrake,reset:keys.KeyR};}
+function resetCar(){me.root.position.set((Math.random()-.5)*10,0,16);me.vel.set(0,0,0);me.yaw=0;me.jumpV=0}
+function clampArena(o){o.root.position.x=THREE.MathUtils.clamp(o.root.position.x,-19.2,19.2);o.root.position.z=THREE.MathUtils.clamp(o.root.position.z,-29.3,29.3)}
+function syncLocalCar(dt,inp){
+ const c=me; c.yaw+=inp.steer*dt*(2.35+Math.min(c.vel.length()*.12,1.4))*(c.vel.z*Math.cos(c.yaw)-c.vel.x*Math.sin(c.yaw)>=0?1:-1);
+ c.root.rotation.y=c.yaw;c.drive=inp.drive;
+ const forward=new THREE.Vector3(-Math.sin(c.yaw),0,-Math.cos(c.yaw));
+ const boost=inp.boost&&c.boost>0&&inp.drive>=-.1;
+ let accel=inp.drive*(boost?27:13);
+ if(inp.brake)accel=-Math.sign(c.vel.dot(forward))*18;
+ c.vel.addScaledVector(forward,accel*dt);
+ if(boost){c.boost=Math.max(0,c.boost-34*dt);c.flame.visible=true;c.vel.addScaledVector(forward,12*dt)}else{c.boost=Math.min(100,c.boost+10*dt);c.flame.visible=false}
+ c.vel.multiplyScalar(Math.pow(inp.brake?.92:.985,dt*60));const max=boost?23:15;if(c.vel.length()>max)c.vel.setLength(max);
+ c.root.position.addScaledVector(c.vel,dt);
+ if(inp.jump&&c.root.position.y<.08)c.jumpV=8;
+ c.jumpV-=22*dt;c.root.position.y+=c.jumpV*dt;if(c.root.position.y<0){c.root.position.y=0;c.jumpV=0}
+ clampArena(c);
+}
+function stepBall(dt){
+ ballState.v.y-=9.8*dt;ball.position.addScaledVector(ballState.v,dt);
+ if(ball.position.y<1.15){ball.position.y=1.15;if(ballState.v.y<0)ballState.v.y*=-.68;ballState.v.x*=.985;ballState.v.z*=.985}
+ if(Math.abs(ball.position.x)>20.2){ball.position.x=Math.sign(ball.position.x)*20.2;ballState.v.x*=-.72}
+ if(ball.position.z>31.4||ball.position.z< -31.4){
+  const goal=Math.abs(ball.position.x)<5.4&&ball.position.y<4.4;
+  if(goal){score(ball.position.z>0?'blue':'orange');return}
+  ball.position.z=Math.sign(ball.position.z)*31.4;ballState.v.z*=-.78;
+ }
+ // Arena and car collision
+ const d=ball.position.clone().sub(me.root.position.clone().add(new THREE.Vector3(0,.85,0)));
+ if(d.length()<2.35){const n=d.normalize();ball.position.copy(me.root.position).add(new THREE.Vector3(0,.85,0)).addScaledVector(n,2.36);ballState.v.addScaledVector(n,Math.max(5,me.vel.length()*1.1));ballState.v.addScaledVector(me.vel,.3);ballState.v.y=Math.max(ballState.v.y,2.2)}
+ for(const c of Object.values(remoteCars)){const dd=ball.position.clone().sub(c.root.position.clone().add(new THREE.Vector3(0,.8,0)));if(dd.length()<2.3){const n=dd.normalize();ballState.v.addScaledVector(n,5);}}
+ ballState.v.multiplyScalar(Math.pow(.998,dt*60));if(ballState.v.length()>29)ballState.v.setLength(29);
+}
+let blueScore=0,orangeScore=0,timeLeft=180,lastTick=performance.now(),lastSend=0,goalLock=false;
+function score(team){if(goalLock)return;goalLock=true;if(team==='blue')blueScore++;else orangeScore++;$('blueScore').textContent=blueScore;$('orangeScore').textContent=orangeScore;$('goalBanner').textContent='GOAL!';$('goalBanner').style.opacity=1;setTimeout(()=>$('goalBanner').style.opacity=0,1400);setTimeout(()=>{ball.position.set(0,1.25,0);ballState.v.set(0,0,0);resetCar();for(const c of Object.values(remoteCars)){c.root.position.set((Math.random()-.5)*12,0,-15);c.vel.set(0,0,0)}goalLock=false},1700)}
+function updateCamera(dt){const forward=new THREE.Vector3(-Math.sin(me.yaw),0,-Math.cos(me.yaw));const target=me.root.position.clone().addScaledVector(forward,-8).add(new THREE.Vector3(0,5,0));camera.position.lerp(target,1-Math.pow(.001,dt));camera.lookAt(me.root.position.clone().addScaledVector(forward,4).add(new THREE.Vector3(0,1.1,0)))}
+function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;setTimeout(()=>$('toast').style.opacity=0,2200)}
+function setStatus(s){$('status').textContent=s}
+function showGame(){gameStarted=true;$('menu').style.display='none';$('controls').style.display='block';matchEnd=performance.now()+180000;lastTick=performance.now();setStatus(roomCode?`Room ${roomCode}`:'Practice mode')}
+$('playSolo').onclick=()=>{roomCode='';showGame();toast('Practice match — go score!')};
+$('host').onclick=async()=>{roomCode=($('room').value.trim().toUpperCase()||Math.random().toString(36).slice(2,8).toUpperCase()).replace(/[^A-Z0-9]/g,'').slice(0,12);$('room').value=roomCode;isHost=true;await connectRoom(true)};
+$('join').onclick=async()=>{roomCode=$('room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);if(!roomCode)return toast('Enter a room code first');isHost=false;await connectRoom(false)};
+$('copyRoom').onclick=async()=>{if(!roomCode)roomCode=$('room').value.trim().toUpperCase();if(!roomCode)return toast('Create or enter a room code first');const url=new URL(location.href);url.hash='room='+roomCode;try{await navigator.clipboard.writeText(url.href);toast('Invite link copied!')}catch{toast('Room code: '+roomCode)}};
+if(location.hash.startsWith('#room=')){$('room').value=decodeURIComponent(location.hash.slice(6)).toUpperCase()}
+function peerConnection(id,initiator){const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}]});let channel=null;
+ function attach(ch){channel=ch;peers[id].channel=ch;ch.onopen=()=>{setStatus(`Room ${roomCode} · connected`);toast('Friend connected!')};ch.onmessage=e=>{try{const data=JSON.parse(e.data);if(data.type==='state')applyRemote(id,data);if(data.type==='ball'&&!isHost){ball.position.set(data.p.x,data.p.y,data.p.z);ballState.v.set(data.v.x,data.v.y,data.v.z)}}catch{}}}
+ if(initiator)attach(pc.createDataChannel('pocket-arena',{ordered:false,maxRetransmits:0}));else pc.ondatachannel=e=>attach(e.channel);
+ pc.onicecandidate=e=>{if(e.candidate&&db&&roomRef)roomRef.child('signals').child(id).child(initiator?'offerCandidates':'answerCandidates').push(e.candidate.toJSON())};
+ pc.onconnectionstatechange=()=>{if(['failed','closed','disconnected'].includes(pc.connectionState)){setStatus(`Room ${roomCode} · ${pc.connectionState}`)}};
+ peers[id]={pc,channel:null};return pc;
+}
+async function connectRoom(hosting){
+ if(!db){toast('Firebase failed to initialize. Check your connection.');return}
+ if(!roomCode)return toast('Room code missing');
+ showGame();setStatus('Connecting to Firebase…');
+ roomRef=db.ref('pocketArenaRooms/'+roomCode);
  try{
-  const snapshot=await get(ref(db,"rooms"));
-  let joined=false;
-
-  if(snapshot.exists()){
-   const rooms=snapshot.val();
-
-   for(const [id,room] of Object.entries(rooms)){
-    if(room.status!=="waiting")continue;
-
-    const target=ref(db,"rooms/"+id);
-
-    const result=await runTransaction(target,current=>{
-     if(!current||current.status!=="waiting")return;
-
-     current.players=current.players||{};
-
-     if(current.players[user.uid])return current;
-     if(Object.keys(current.players).length>=2)return;
-
-     current.players[user.uid]={
-      uid:user.uid,
-      name:playerName(),
-      slot:1,
-      x:1370,
-      y:480,
-      vx:0,
-      vy:0,
-      angle:Math.PI,
-      boost:100
-     };
-
-     current.status="playing";
-     current.startedAt=Date.now();
-     current.ball=current.ball||{
-      x:800,y:280,vx:0,vy:0
-     };
-     current.score=current.score||{
-      blue:0,orange:0
-     };
-     current.timeLeft=120;
-
-     return current;
-    });
-
-    if(result.committed&&result.snapshot.exists()){
-     const data=result.snapshot.val();
-
-     if(data.players?.[user.uid]){
-      roomId=id;
-      roomRef=target;
-      slot=1;
-      isHost=false;
-      joined=true;
-      break;
-     }
-    }
-   }
-  }
-
-  if(!joined){
-   const newRoom=push(ref(db,"rooms"));
-
-   roomId=newRoom.key;
-   roomRef=newRoom;
-   slot=0;
-   isHost=true;
-
-   await set(roomRef,{
-    status:"waiting",
-    hostUid:user.uid,
-    createdAt:Date.now(),
-    players:{
-     [user.uid]:{
-      uid:user.uid,
-      name:playerName(),
-      slot:0,
-      x:230,
-      y:480,
-      vx:0,
-      vy:0,
-      angle:0,
-      boost:100
-     }
-    },
-    ball:{x:800,y:280,vx:0,vy:0},
-    score:{blue:0,orange:0},
-    timeLeft:120
-   });
-
-   await onDisconnect(
-    ref(db,`rooms/${roomId}/players/${user.uid}`)
-   ).remove();
-
-   status("Room created · Waiting for opponent...");
-   waitForOpponent();
+  if(!auth.currentUser) await auth.signInAnonymously(); myId=auth.currentUser.uid;
+  if(hosting){
+   await roomRef.set({host:myId,createdAt:firebase.database.ServerValue.TIMESTAMP,players:{[myId]:{name:$('nickname').value.trim()||'Player',team:'blue',joinedAt:Date.now()}}});
   }else{
-   startMatch();
+   const snap=await roomRef.once('value');if(!snap.exists())return toast('Room not found — ask the host to create it.');
+   await roomRef.child('players/'+myId).set({name:$('nickname').value.trim()||'Player',team:'orange',joinedAt:Date.now()});
   }
- }catch(error){
-  console.error(error);
-  status("Matchmaking error: "+error.message);
-  searching=false;
-  $("play").disabled=false;
- }
+  roomRef.child('players').on('child_added',s=>{if(s.key!==myId)setupPeer(s.key,s.val(),hosting)});
+  roomRef.child('players').on('child_removed',s=>{const p=peers[s.key];if(p){p.pc.close();delete peers[s.key]}if(remoteCars[s.key]){scene.remove(remoteCars[s.key].root);delete remoteCars[s.key]}});
+  roomRef.child('players').on('value',snap=>{const count=snap.numChildren();setStatus(`Room ${roomCode} · ${count} player${count===1?'':'s'}`)});
+  setStatus(`Room ${roomCode} · waiting for players`);toast(`Room ${roomCode} ready — share the invite!`);
+ }catch(e){console.error(e);toast('Firebase error: '+e.message);setStatus('Connection error — check database rules')}
 }
-
-function waitForOpponent(){
- clearInterval(waitTimer);
-
- waitTimer=setInterval(async()=>{
-  if(!roomRef){
-   clearInterval(waitTimer);
-   return;
-  }
-
-  try{
-   const snapshot=await get(roomRef);
-
-   if(!snapshot.exists()){
-    clearInterval(waitTimer);
-    searching=false;
-    status("Room closed. Try again.");
-    $("play").disabled=false;
-    return;
-   }
-
-   const data=snapshot.val();
-
-   if(data.status==="playing"){
-    clearInterval(waitTimer);
-    startMatch();
-   }
-  }catch(error){
-   console.error(error);
-  }
- },1000);
-}
-
-$("play").addEventListener("click",findMatch);
-
-/* ==========================================
-   GAME STATE
-========================================== */
-
-const canvas=$("canvas");
-const ctx=canvas.getContext("2d");
-
-const W=1600,H=900;
-
-let scale=1;
-let offsetX=0;
-let offsetY=0;
-
-function resize(){
- canvas.width=innerWidth*devicePixelRatio;
- canvas.height=innerHeight*devicePixelRatio;
-
- scale=Math.min(canvas.width/W,canvas.height/H);
-
- offsetX=(canvas.width-W*scale)/2;
- offsetY=(canvas.height-H*scale)/2;
-}
-window.addEventListener("resize",resize);
-resize();
-
-let me={
- x:230,y:480,vx:0,vy:0,angle:0,
- boost:100,onGround:true,jumpHeld:false
-};
-
-let ball={x:800,y:280,vx:0,vy:0};
-let players={};
-let scores={blue:0,orange:0};
-let timeLeft=120;
-
-const keys={};
-
-const keyMap={
- ArrowLeft:"left",
- a:"left",
- ArrowRight:"right",
- d:"right",
- ArrowUp:"jump",
- w:"jump",
- " ":"jump",
- Shift:"boost"
-};
-
-window.addEventListener("keydown",event=>{
- const k=keyMap[event.key]||keyMap[event.key.toLowerCase()];
-
- if(k){
-  keys[k]=true;
-  event.preventDefault();
- }
-});
-
-window.addEventListener("keyup",event=>{
- const k=keyMap[event.key]||keyMap[event.key.toLowerCase()];
- if(k)keys[k]=false;
-});
-
-document.querySelectorAll(".ctrl").forEach(el=>{
- const k=el.dataset.key;
-
- el.addEventListener("pointerdown",event=>{
-  event.preventDefault();
-  keys[k]=true;
-  el.setPointerCapture(event.pointerId);
- });
-
- ["pointerup","pointercancel","lostpointercapture"].forEach(type=>{
-  el.addEventListener(type,()=>keys[k]=false);
- });
-});
-
-/* ==========================================
-   START MATCH
-========================================== */
-
-function startMatch(){
- if(active)return;
-
- clearInterval(waitTimer);
-
- searching=false;
- active=true;
- matchEnded=false;
-
- $("menu").classList.add("hidden");
- $("game").classList.remove("hidden");
-
- me={
-  x:slot===0?230:1370,
-  y:480,
-  vx:0,vy:0,
-  angle:slot===0?0:Math.PI,
-  boost:100,
-  onGround:true,
-  jumpHeld:false
- };
-
- if(unsubscribe)unsubscribe();
-
- unsubscribe=onValue(roomRef,snapshot=>{
-  if(!snapshot.exists()){
-   leaveMatch(false);
-   return;
-  }
-
-  roomData=snapshot.val();
-
-  players=roomData.players||{};
-  ball=roomData.ball||ball;
-  scores=roomData.score||scores;
-  timeLeft=roomData.timeLeft??120;
-
-  updateHUD();
-
-  if(roomData.status==="finished"){
-   finishMatch();
-  }
-
-  if(roomData.status==="waiting"&&slot===1){
-   leaveMatch(false);
-  }
- });
-
- previous=0;
- requestAnimationFrame(loop);
-}
-
-function updateHUD(){
- $("blueScore").textContent="BLUE "+(scores.blue||0);
- $("orangeScore").textContent="ORANGE "+(scores.orange||0);
-
- const seconds=Math.max(0,timeLeft|0);
-
- $("clock").textContent=
-  String(Math.floor(seconds/60)).padStart(2,"0")+":"+
-  String(seconds%60).padStart(2,"0");
-
- $("fuelbar").style.width=me.boost+"%";
-}
-
-/* ==========================================
-   PLAYER PHYSICS
-========================================== */
-
-function updateCar(dt){
- const left=keys.left;
- const right=keys.right;
-
- if(left)me.vx-=0.3*dt*60;
- if(right)me.vx+=0.3*dt*60;
-
- me.vx*=Math.pow(0.985,dt*60);
- me.vx=Math.max(-11,Math.min(11,me.vx));
-
- if(keys.jump&&!me.jumpHeld&&me.onGround){
-  me.vy=-13;
-  me.onGround=false;
- }
-
- me.jumpHeld=keys.jump;
-
- if(keys.boost&&me.boost>0){
-  me.vx+=(slot===0?0.22:-0.22)*dt*60;
-  me.vy-=0.16*dt*60;
-  me.boost=Math.max(0,me.boost-0.9*dt*60);
- }else{
-  me.boost=Math.min(100,me.boost+0.2*dt*60);
- }
-
- me.vy+=0.55*dt*60;
- me.x+=me.vx*dt*60;
- me.y+=me.vy*dt*60;
-
- if(me.y>H-125){
-  me.y=H-125;
-  me.vy=0;
-  me.onGround=true;
- }
-
- if(me.y<65){
-  me.y=65;
-  me.vy=0;
- }
-
- me.x=Math.max(65,Math.min(W-65,me.x));
-
- if(Math.abs(me.vx)>0.4){
-  me.angle=Math.atan2(me.vy,me.vx);
- }
-}
-
-/* ==========================================
-   HOST BALL PHYSICS
-========================================== */
-
-let lastPublish=0;
-let lastTick=0;
-let lastHostUpdate=0;
-let previous=0;
-
-function resetBall(){
- ball={x:800,y:280,vx:0,vy:0};
-}
-
-function hostPhysics(dt){
- if(!isHost||!roomData||roomData.status!=="playing")return;
-
- const step=dt*60;
-
- ball.vy+=0.38*step;
- ball.x+=ball.vx*step;
- ball.y+=ball.vy*step;
-
- ball.vx*=0.997;
- ball.vy*=0.997;
-
- if(ball.y>H-100){
-  ball.y=H-100;
-  ball.vy=-Math.abs(ball.vy)*0.76;
- }
-
- if(ball.y<45){
-  ball.y=45;
-  ball.vy=Math.abs(ball.vy)*0.8;
- }
-
- for(const player of Object.values(players)){
-  const dx=ball.x-(player.x||0);
-  const dy=ball.y-(player.y||0);
-  const distance=Math.hypot(dx,dy);
-
-  if(distance<70&&distance>0){
-   const nx=dx/distance;
-   const ny=dy/distance;
-
-   ball.x+=nx*(70-distance);
-   ball.y+=ny*(70-distance);
-
-   ball.vx+=nx*5;
-   ball.vy+=ny*5;
-  }
- }
-
- if(ball.x<45){
-  if(ball.y>330&&ball.y<650){
-   scores.orange=(scores.orange||0)+1;
-   resetBall();
-  }else{
-   ball.x=45;
-   ball.vx=Math.abs(ball.vx)*0.8;
-  }
- }
-
- if(ball.x>W-45){
-  if(ball.y>330&&ball.y<650){
-   scores.blue=(scores.blue||0)+1;
-   resetBall();
-  }else{
-   ball.x=W-45;
-   ball.vx=-Math.abs(ball.vx)*0.8;
-  }
- }
-
- if(Date.now()-lastTick>=1000){
-  lastTick=Date.now();
-  timeLeft=Math.max(0,timeLeft-1);
-
-  if(timeLeft===0){
-   finishHostMatch();
-  }
- }
-
- if(Date.now()-lastHostUpdate>=65){
-  lastHostUpdate=Date.now();
-
-  update(roomRef,{
-   ball,
-   score:scores,
-   timeLeft
-  }).catch(console.error);
- }
-}
-
-let finishing=false;
-
-async function finishHostMatch(){
- if(finishing)return;
- finishing=true;
-
+async function setupPeer(id,info,hosting){
+ if(peers[id])return;const pc=peerConnection(id,hosting);peerMeta[id]=info||{};makeRemote(id,info?.name||'Friend',info?.team==='orange'?0xff8b35:0x11aee0);
+ const signalRef=roomRef.child('signals').child(hosting?myId:id);
  try{
-  await update(roomRef,{
-   status:"finished",
-   ball,
-   score:scores,
-   timeLeft:0
-  });
- }catch(error){
-  console.error(error);
- }
-}
-
-/* ==========================================
-   ARENA RENDERING
-========================================== */
-
-function roundedRect(x,y,w,h,r,color){
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.roundRect(x,y,w,h,r);
- ctx.fill();
-}
-
-function drawArena(){
- const gradient=ctx.createLinearGradient(0,0,0,H);
- gradient.addColorStop(0,"#102341");
- gradient.addColorStop(1,"#081326");
-
- ctx.fillStyle=gradient;
- ctx.fillRect(0,0,W,H);
-
- for(let i=0;i<30;i++){
-  ctx.fillStyle=i%2?"#18385a":"#142b49";
-  ctx.fillRect(i*56,120,26,170);
- }
-
- ctx.fillStyle="#132b46";
- ctx.fillRect(0,650,W,250);
-
- const floor=ctx.createLinearGradient(0,650,0,900);
- floor.addColorStop(0,"#174c62");
- floor.addColorStop(1,"#10243b");
-
- ctx.fillStyle=floor;
- ctx.fillRect(0,650,W,250);
-
- ctx.strokeStyle="#6bb8d7";
- ctx.lineWidth=4;
- ctx.beginPath();
- ctx.moveTo(0,650);
- ctx.lineTo(W,650);
- ctx.stroke();
-
- ctx.beginPath();
- ctx.arc(800,650,110,Math.PI,0);
- ctx.stroke();
-
- ctx.fillStyle="#208bff55";
- ctx.fillRect(0,330,65,320);
-
- ctx.fillStyle="#ff974455";
- ctx.fillRect(W-65,330,65,320);
-
- ctx.strokeStyle="#47baff";
- ctx.lineWidth=9;
- ctx.strokeRect(8,330,50,320);
-
- ctx.strokeStyle="#ff9c53";
- ctx.strokeRect(W-58,330,50,320);
-
- ctx.strokeStyle="#ffffff17";
- ctx.lineWidth=2;
- ctx.beginPath();
- ctx.moveTo(800,330);
- ctx.lineTo(800,650);
- ctx.stroke();
-}
-
-function drawCar(player,team,name,isLocal=false){
- const x=player.x;
- const y=player.y;
-
- const blue=team===0;
- const color=blue?"#36baff":"#ff984c";
-
- const asset=images[blue?"blueCar":"orangeCar"];
-
- ctx.save();
- ctx.translate(x,y);
- ctx.rotate(player.angle||0);
-
- if(asset?.complete&&asset.naturalWidth){
-  ctx.drawImage(asset,-62,-32,124,64);
- }else{
-  ctx.shadowBlur=18;
-  ctx.shadowColor=color;
-
-  roundedRect(-55,-23,110,39,13,color);
-
-  ctx.shadowBlur=0;
-
-  roundedRect(-22,-42,49,28,10,
-   blue?"#a6e8ff":"#ffd0a3");
-
-  roundedRect(-17,-37,37,17,5,"#18324d");
-
-  roundedRect(36,-13,14,12,4,"#fff1be");
-
-  roundedRect(-54,-13,12,12,3,"#ffdf87");
-
-  for(const wheel of [-33,35]){
-   ctx.fillStyle="#07111e";
-   ctx.beginPath();
-   ctx.arc(wheel,18,13,0,Math.PI*2);
-   ctx.fill();
-
-   ctx.strokeStyle="#8aa3bd";
-   ctx.lineWidth=4;
-   ctx.beginPath();
-   ctx.arc(wheel,18,6,0,Math.PI*2);
-   ctx.stroke();
+  if(hosting){
+   const offer=await pc.createOffer();await pc.setLocalDescription(offer);await roomRef.child('signals').child(id).child('offer').set({type:offer.type,sdp:offer.sdp});
+   roomRef.child('signals').child(id).child('answer').on('value',async s=>{const a=s.val();if(a&&!pc.currentRemoteDescription)await pc.setRemoteDescription(a).catch(console.warn)});
+   roomRef.child('signals').child(myId).child('answerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
+   roomRef.child('signals').child(myId).child('offerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
+  }else{
+   const offerSnap=await roomRef.child('signals').child(myId).child('offer').once('value');const offer=offerSnap.val();if(!offer){toast('Host offer not ready; try joining again in a moment.');return}
+   await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await roomRef.child('signals').child(myId).child('answer').set({type:answer.type,sdp:answer.sdp});
+   roomRef.child('signals').child(myId).child('offerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
+   roomRef.child('signals').child(myId).child('answerCandidates').on('child_added',s=>pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}));
   }
-
-  ctx.fillStyle="#ffffff";
-  ctx.font="bold 11px Arial";
-  ctx.textAlign="center";
-  ctx.fillText("TR",0,-8);
- }
-
- ctx.restore();
-
- ctx.fillStyle="#fff";
- ctx.font="bold 16px Arial";
- ctx.textAlign="center";
- ctx.fillText(name||"Racer",x,y-54);
-
- if(isLocal){
-  ctx.fillStyle="#7de2ff";
-  ctx.font="bold 10px Arial";
-  ctx.fillText("YOU",x,y-68);
- }
+ }catch(e){console.error(e);toast('WebRTC handshake failed: '+e.message)}
 }
-
-function drawBall(){
- ctx.save();
-
- ctx.shadowBlur=24;
- ctx.shadowColor="#ffffff";
-
- const gradient=ctx.createRadialGradient(
-  ball.x-9,ball.y-10,3,
-  ball.x,ball.y,27
- );
-
- gradient.addColorStop(0,"#ffffff");
- gradient.addColorStop(1,"#9bb8d0");
-
- ctx.fillStyle=gradient;
- ctx.beginPath();
- ctx.arc(ball.x,ball.y,26,0,Math.PI*2);
- ctx.fill();
-
- ctx.strokeStyle="#536b85";
- ctx.lineWidth=3;
- ctx.stroke();
-
- ctx.restore();
-}
-
-function render(){
- ctx.setTransform(1,0,0,1,0,0);
- ctx.clearRect(0,0,canvas.width,canvas.height);
-
- ctx.setTransform(scale,0,0,scale,offsetX,offsetY);
-
- drawArena();
- drawBall();
-
- for(const [uid,player] of Object.entries(players)){
-  if(uid===user?.uid)continue;
-  drawCar(player,player.slot,player.name);
- }
-
- drawCar(me,slot,playerName(),true);
-}
-
-/* ==========================================
-   GAME LOOP
-========================================== */
-
-function loop(timestamp){
- if(!active)return;
-
- const dt=Math.min((timestamp-previous)/1000||0.016,0.04);
- previous=timestamp;
-
- updateCar(dt);
-
- if(Date.now()-lastPublish>90){
-  lastPublish=Date.now();
-
-  if(roomRef&&user){
-   update(
-    ref(db,`rooms/${roomId}/players/${user.uid}`),
-    {
-     x:me.x,
-     y:me.y,
-     vx:me.vx,
-     vy:me.vy,
-     angle:me.angle,
-     boost:me.boost
-    }
-   ).catch(console.error);
-  }
- }
-
- hostPhysics(dt);
- render();
-
- requestAnimationFrame(loop);
-}
-
-/* ==========================================
-   FINISH MATCH
-========================================== */
-
-function finishMatch(){
- if(matchEnded)return;
-
- matchEnded=true;
- active=false;
-
- const winner=
-  scores.blue===scores.orange?"DRAW":
-  scores.blue>scores.orange?"BLUE WINS!":"ORANGE WINS!";
-
- $("message").textContent=winner;
-
- setTimeout(()=>leaveMatch(true),3500);
-}
-
-async function leaveMatch(removeRoom=true){
- active=false;
- searching=false;
-
- clearInterval(waitTimer);
-
- if(unsubscribe){
-  unsubscribe();
-  unsubscribe=null;
- }
-
- if(roomRef&&user){
-  try{
-   if(removeRoom&&isHost){
-    await remove(roomRef);
-   }else{
-    await remove(ref(
-     db,`rooms/${roomId}/players/${user.uid}`
-    ));
-
-    if(isHost){
-     await update(roomRef,{
-      status:"waiting",
-      hostUid:null
-     });
-    }
-   }
-  }catch(error){
-   console.error(error);
-  }
- }
-
- roomRef=null;
- roomId=null;
- roomData=null;
- finishing=false;
-
- $("game").classList.add("hidden");
- $("menu").classList.remove("hidden");
- $("message").textContent="";
- $("play").disabled=!connected;
-
- status(connected?"Connected · Ready to play":"Disconnected");
-}
-
-$("exit").addEventListener("click",()=>leaveMatch());
-
-document.addEventListener("visibilitychange",()=>{
- if(document.hidden){
-  for(const key of Object.keys(keys)){
-   keys[key]=false;
-  }
- }
-});
-
+function applyRemote(id,d){let c=remoteCars[id];if(!c)c=makeRemote(id,peerMeta[id]?.name||'Friend',0xff8b35);c.root.position.set(d.p.x,d.p.y,d.p.z);c.yaw=d.yaw;c.root.rotation.y=d.yaw;c.boost=d.boost||0}
+function sendState(){const payload=JSON.stringify({type:'state',p:{x:me.root.position.x,y:me.root.position.y,z:me.root.position.z},yaw:me.yaw,boost:me.boost});for(const p of Object.values(peers))if(p.channel?.readyState==='open')p.channel.send(payload)}
+function syncBall(){if(!isHost)return;const payload=JSON.stringify({type:'ball',p:{x:ball.position.x,y:ball.position.y,z:ball.position.z},v:{x:ballState.v.x,y:ballState.v.y,z:ballState.v.z}});for(const p of Object.values(peers))if(p.channel?.readyState==='open')p.channel.send(payload)}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.035,(now-lastTick)/1000||.016);lastTick=now;if(gameStarted){const inp=input();if(inp.reset)resetCar();syncLocalCar(dt,inp);
+ if(isHost||!roomCode)stepBall(dt);
+ // Guests predict locally until host state packets arrive; host is authoritative for ball in multiplayer.
+ if(now-lastSend>55){sendState();syncBall();lastSend=now}
+ if(now>matchEnd){matchEnd=now+180000;toast('New round!')}
+ $('clock').textContent=Math.floor(Math.max(0,matchEnd-now)/60000)+':'+String(Math.floor(Math.max(0,matchEnd-now)/1000)%60).padStart(2,'0');
+ $('boostLabel').textContent='BOOST '+Math.round(me.boost)+'%';$('boostBar').style.width=me.boost+'%';updateCamera(dt);
+ }else{camera.position.lerp(new THREE.Vector3(28,24,35),.012);camera.lookAt(0,0,0);ball.rotation.y+=dt*.4}
+ for(const c of Object.values(remoteCars)){for(const w of c.wheels)w.rotation.x+=dt*5}
+ ball.rotation.x+=dt*.35;renderer.render(scene,camera)}
+requestAnimationFrame(loop);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
+window.addEventListener('beforeunload',()=>{try{roomRef?.child('players/'+myId).remove();for(const p of Object.values(peers))p.pc.close()}catch{}});
+// Avoid accidental page zoom while playing.
+document.addEventListener('gesturestart',e=>e.preventDefault());
 </script>
-</body>
-</html>
+</body></html>
